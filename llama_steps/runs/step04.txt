@@ -1,0 +1,47 @@
+
+--- 1. GQA 到底改了什么 ---
+C (n_embd)             = 64
+n_head                 = 4   <- Q 头的个数
+n_kv_head              = 2   <- K/V 头的个数，只有 Q 头的 1/g
+head_dim               = 16   <- = C / n_head，每个头的维度
+g                      = 2   <- = n_head / n_kv_head，每 g 个 Q 头共享一组 K/V
+  n_kv_head = n_head -> MHA（每个 Q 头独占自己的 K/V）
+  n_kv_head = 1      -> MQA（所有 Q 头共享同一组 K/V）
+
+--- 2. 形状流水线：只有 K/V 的头数变了 ---
+x                      = (1, 8, 64)   <- (B,T,C)
+q                      = (1, 4, 8, 16)   <- (B,H,T,D)，已过 RoPE，H 个 query 头
+k                      = (1, 2, 8, 16)   <- (B,Hkv,T,D)，已过 RoPE，只有 Hkv 个 KV 头
+repeat_kv(k)           = (1, 4, 8, 16)   <- (B,H,T,D)，复制出来给每个 Q 头
+scores                 = (1, 4, 8, 8)   <- (B,H,T,T)，这里还没加因果掩码
+out                    = (1, 8, 64)   <- (B,T,C)，和输入同形
+
+--- 3. 参数量：K/V 投影变小了 ---
+q_proj                 = 4,096   <- C * C
+k_proj                 = 2,048   <- C * C/g
+v_proj                 = 2,048   <- C * C/g
+o_proj                 = 4,096   <- C * C
+attn GQA               = 12,288   <- 2C² + 2C²/g
+attn MHA               = 16,384   <- 4C²
+saved                  = 4,096   <- -25.0% vs MHA
+MQA (kv=1)             = 10,240   <- -37.5% vs MHA
+
+--- 4. KV cache：GQA 真正省钱的地方 ---
+per-token GQA          = 64   <- 每 token 每层的元素数
+per-token MHA          = 128   <- 每 token 每层的元素数
+toy cache GQA          = 32,768   <- 字节，B=1，fp32
+toy cache MHA          = 65,536   <- 字节，B=1，fp32
+Llama-3-8B GQA         = 1.0 GiB   <- 32 层 × 8 KV 头 × 8192 × fp16
+Llama-3 MHA            = 4.0 GiB   <- 同层数，但 32 个 KV 头
+Llama-3-70B GQA        = 2.5 GiB   <- 80 层 × 8 KV 头 × 8192 × fp16
+  公式：2 * n_layer * B * T_max * n_kv_head * head_dim * sizeof(dtype)
+
+--- 5. 三个自检 ---
+[OK] n_kv_head = n_head 时 GQA 退化成 MHA，max|diff| = 0.0e+00
+[OK] 改未来 token，不影响过去位置的输出（因果掩码）
+[OK] repeat_kv 只复制、不新增参数：多出来的 Q 头共用同一组 K/V
+
+一句话记住：
+  GQA 让 g 个 Q 头共享一组 K/V：cache 小 g 倍，参数从 4C² 降到 2C²+2C²/g。
+
+[OK] 全部检查通过

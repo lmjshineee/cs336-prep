@@ -1,0 +1,37 @@
+# ---- macOS ----
+.DS_Store
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+.uvcache/
+.tmp/
+.mplcache/
+.cache/
+.ipynb_checkpoints/
+
+# ---- 模型权重（体积大，从 Hugging Face 重新下载）----
+weights/
+
+# ---- 前端依赖 ----
+node_modules/
+
+# ---- demo 的生成产物 / 备份 / 第三方依赖 / 多文件应用 ----
+demo/backup/
+demo/output/
+demo/GPT2-LLaMA-Atlas/data/
+demo/GPT2-LLaMA-Atlas/vendor/
+demo/GPT2-LLaMA-Atlas/js/
+demo/GPT2-LLaMA-Atlas/css/
+demo/GPT2-LLaMA-Atlas/tests/
+demo/GPT2-LLaMA-Atlas/index.html
+demo/GPT2-LLaMA-Atlas/llama.html
+demo/DeepSeek-V4.1-Flash/
+
+# ---- 压缩包与二进制文档 ----
+*.tar.gz
+*.zip
+*.pdf

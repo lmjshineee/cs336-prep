@@ -1,0 +1,46 @@
+
+--- 1. 一个 block 只有两行，各自包着残差 ---
+  x = x + attn(attn_norm(x), cos, sin)
+  x = x + ffn(ffn_norm(x))
+x                      = (1, 8, 64)   <- (B,T,C)，残差流的初始值
+y                      = (1, 8, 64)   <- (B,T,C)，和输入同形
+
+--- 2. Pre-Norm：归一化在残差分支入口，不在残差之后 ---
+residual RMS           = 3.04   <- 没被归一化，故意放大 3 倍
+attn_norm out RMS      = 1.0000   <- ≈ 1，尺度被拉回来了
+manual vs block        = max|diff| = 0.0e+00
+[OK] RMSNorm 在 float32 里算，最后转回输入 dtype：bf16 进 -> bf16 出
+
+--- 3. 没有 bias、没有 dropout ---
+Linear 个数            = 7   <- q/k/v/o + gate/up/down
+bias 参数数            = 0
+Dropout 个数           = 0
+config.dropout         = 0.0   <- GPT-2 是 0.1，Llama 是 0
+
+--- 4. 参数量：GPT-2 block vs Llama block（C=64, F=176, g=2） ---
+GPT-2 attn             = 16,640   <- 4C² + 4C（含 bias）
+GPT-2 ffn              = 33,088   <- 8C² + 5C（含 bias）
+GPT-2 LayerNorm        = 256   <- 2 × (γ,β) = 4C
+GPT-2 block            = 49,984   <- 12C² + 13C
+Llama attn             = 12,288   <- 2C² + 2C²/g（无 bias）
+Llama ffn              = 33,792   <- 3·C·F
+Llama RMSNorm          = 128   <- 2 × γ = 2C
+Llama block            = 46,208   <- -7.6% vs GPT-2
+GPT-2 若不带 bias      = 49,408   <- 4C² + 8C² + 4C（LN 的 γ、β）
+Llama 若 g=4           = 44,160   <- 2.5C² + 3CF + 2C
+
+--- 5. block 内参数占比 ---
+attn                   = 26.6%   <- GQA 之后只占约 1/4
+ffn                    = 73.1%   <- 大头依然在 FFN
+norm                   = 0.3%   <- 只剩 γ，几乎可以忽略
+
+--- 6. 三个自检 ---
+[OK] 输入输出同形：block 可以原样叠 N 层
+[OK] 两个子层输出为 0 时，block 退化成恒等映射（max|diff| = 0.0e+00）
+[OK] 先 norm 再进子层、最后加残差：hook 抓到的是未归一化的残差流
+
+一句话记住：
+  Llama block = GPT-2 block 的骨架 + 四个零件：
+  RMSNorm / RoPE / GQA / SwiGLU，外加去掉 bias 和 dropout。
+
+[OK] 全部检查通过

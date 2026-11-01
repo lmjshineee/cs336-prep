@@ -1,0 +1,57 @@
+
+--- 1. 公式与代码对照 ---
+  LayerNorm:  μ = mean(x),  σ² = mean((x-μ)²)
+              y = (x - μ) / √(σ² + ε) * γ + β
+  RMSNorm :   y = x / √(mean(x²) + ε) * γ      # 不碰均值，没有 β
+  写成代码：
+    LN : (x - x.mean(-1, keepdim=True))
+         / (x.var(-1, keepdim=True, unbiased=False) + eps).sqrt() * g + b
+    RMS: x / (x.pow(2).mean(-1, keepdim=True) + eps).sqrt() * g
+
+--- 2. 均值偏移的例子：LN 抹掉它，RMSNorm 保留它 ---
+输入 mean              = +3.026   <- 整体偏向 +3
+输入 std               = 0.519
+LN 输出 mean           = -0.000   <- 被减均值拉回 0
+LN 输出 std            = 1.000   <- 除以标准差后 ≈ 1
+RMS 输出 mean          = +0.986   <- 均值方向保留下来
+RMS 输出 std           = 0.169   <- 它不是 1：没有重新居中
+RMS 输出均方根         = 1.000   <- 被拉到 1 的是均方根
+[OK] LN 输出均值≈0；RMSNorm 输出均方根≈1，但保留了均值方向
+
+--- 3. 参数量：C → 2C vs C ---
+C (隐藏维度)           = 64
+LayerNorm 参数         = 128   <- γ (C) + β (C)
+RMSNorm 参数           = 64   <- 只有 γ (C)
+[OK] RMSNorm 参数正好是 LayerNorm 的一半（64 vs 128）
+
+--- 4. 实测耗时（warmup 20 次 + 200 次取中位数）---
+手写 LN 公式           = 90.6 µs
+手写 RMS 公式          = 27.2 µs
+公式版比值             = 3.33x   <- 少一次减均值/方差，快不少
+nn.LayerNorm（融合）   = 16.5 µs
+RMSNorm 模块           = 28.1 µs
+  但 nn.LayerNorm 是单个 C++ 融合 kernel，而 RMSNorm 模块由几个小算子拼成，
+  这个 8×64×64 的规模下启动开销占大头，差异很小（甚至可能反过来）。
+  省下的是「少一次逐元素计算 + 一半参数」，大张量/大模型上才明显。
+  注意：上面几行耗时每次运行都会小幅抖动，属正常现象。
+
+--- 5. 数值稳定性：eps 加在均方根里面 ---
+全零输入 + 朴素除法    = 有 NaN = True
+全零输入 + RMSNorm     = 全零 = True   <- eps 兜住分母
+bf16 输入 → 输出 dtype = torch.bfloat16   <- 内部 fp32 计算，再转回
+[OK] eps 在开方前加进 mean(x²)：全零输入输出仍是 0 而不是 NaN
+
+--- 6. 梯度检查 ---
+x.grad 形状            = (2, 8, 64)   <- 与输入同形 (B,T,C)
+max|x.grad|            = 2.8939
+[OK] 反向传播走通：梯度形状正确、全部有限（全零输入也不炸）
+
+--- 7. 在 block 里怎么用 ---
+  GPT-2:  self.attn_norm = nn.LayerNorm(C)   # 2C 个参数
+  Llama:  self.attn_norm = RMSNorm(C, eps=1e-5)  # C 个参数
+  结构不变（还是 Pre-Norm：先归一化再进子层），只把 LN 换成 RMSNorm。
+
+一句话记住：
+  RMSNorm 不重新居中、参数少一半、少一次减均值；小规模实测未必更快。
+
+[OK] 全部检查通过

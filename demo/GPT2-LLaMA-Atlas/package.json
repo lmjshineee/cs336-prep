@@ -1,0 +1,17 @@
+{
+  "name": "gpt2-llama-atlas",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "GPT-2 × LLaMA 解码器架构学习图谱（静态站点，无运行时依赖）",
+  "scripts": {
+    "serve": "python3 -m http.server 8080",
+    "test": "node --test tests/*.test.mjs",
+    "build": "node tools/build-standalone.mjs",
+    "qa:session": "node --test tools/qa/browser-session.test.mjs",
+    "qa:browser": "node tools/qa/verify_generation_ui.mjs && node tools/qa/verify_llama_ui.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

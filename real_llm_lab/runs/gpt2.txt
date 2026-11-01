@@ -1,0 +1,11 @@
+参数量 = 124,439,808  （GPT-2 small 官方数字 124,439,808）
+配置   = GPT2Config(n_layer=12, n_head=12, n_embd=768, block_size=1024, vocab_size=50257, layer_norm_eps=1e-05)
+
+'The cat sat on the mat.' 用 BPE 分词后 = 7 个 token: [464, 3797, 3332, 319, 262, 2603, 13]
+切回来的文本 = 'The cat sat on the mat.'
+每个 token 对应的原文 = ['The', 'Ġcat', 'Ġsat', 'Ġon', 'Ġthe', 'Ġmat', '.']
+
+logits.shape = (1, 7, 50257)  <- (B, T, V)
+下一个 token 的 Top-5: [('\n', 0.189), (' "', 0.085), (' He', 0.084), (' The', 0.084), (' She', 0.076)]
+
+[OK] 真实权重加载成功，前向形状正确

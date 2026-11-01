@@ -1,0 +1,405 @@
+{
+  "schema": "atlas.source-map/2",
+  "map_version": "smollm2-main@3",
+  "sources": {
+    "step06_model.py": {
+      "sha256": "33fab3eecd388ae9eb474eac1931a5c9ae4897f05ba9ecc2d6c92b0f5ab79506",
+      "snapshot": "sources/llama/step06_model.py",
+      "role": "model"
+    },
+    "step09_real_llama.py": {
+      "sha256": "4c769ed6565c98669143c0c5db5d740338a9df207f5093ff41ad4ecb544ef398",
+      "snapshot": "sources/llama/step09_real_llama.py",
+      "role": "real_loader"
+    }
+  },
+  "symbols": {
+    "RMSNorm": {
+      "file": "step06_model.py",
+      "lines": [
+        119,
+        133
+      ],
+      "span_sha256": "6c9fa622cacabedaa28533dd6e0a8440dd550702f384498b60d61f6e7fb0ec92"
+    },
+    "RMSNorm.forward": {
+      "file": "step06_model.py",
+      "lines": [
+        127,
+        133
+      ],
+      "span_sha256": "27d7c1e52ee2c08bca08ec1d9960b8ffd37c3c7e7a03f64cd918df9e1cbf453c"
+    },
+    "SwiGLU": {
+      "file": "step06_model.py",
+      "lines": [
+        136,
+        147
+      ],
+      "span_sha256": "cc0f929f635a9647bab665daab7e40f4ea6b81389bf16f1b6cb91f31a5632f1e"
+    },
+    "SwiGLU.forward": {
+      "file": "step06_model.py",
+      "lines": [
+        145,
+        147
+      ],
+      "span_sha256": "c71c5a0407444296d02046434fa41d5d221810b239109962aea1a97d544a030a"
+    },
+    "rotate_half": {
+      "file": "step06_model.py",
+      "lines": [
+        150,
+        153
+      ],
+      "span_sha256": "a473d079633a74ee3ae2c9f5cff6cd07e65c51c1666d413767e9fdde3a9b703f"
+    },
+    "build_rope_cache": {
+      "file": "step06_model.py",
+      "lines": [
+        156,
+        169
+      ],
+      "span_sha256": "2f1b3bd14a0d95b50b97a020dbff1587b721f323b3e6f4de08a84c05c3640eae"
+    },
+    "apply_rope": {
+      "file": "step06_model.py",
+      "lines": [
+        172,
+        177
+      ],
+      "span_sha256": "912befb67fc45eb8730dee39ccc68153cc79cb916772c824b0c01104a4cc08cd"
+    },
+    "repeat_kv": {
+      "file": "step06_model.py",
+      "lines": [
+        180,
+        184
+      ],
+      "span_sha256": "e9671cfffac225bf58eaefb4e372f4b53ef6728e468fc78b0ca2496abdb0c5c7"
+    },
+    "KVCache": {
+      "file": "step06_model.py",
+      "lines": [
+        187,
+        222
+      ],
+      "span_sha256": "c4d87b8fbd8f427968f9b54f3d47f7a8a96cf5f1600d111d7de23cfb1e66c60d"
+    },
+    "KVCache.append": {
+      "file": "step06_model.py",
+      "lines": [
+        207,
+        218
+      ],
+      "span_sha256": "19190d8de92219859bd369bc779521740a2bd6fb6af43ae8264e421b18a5cbaa"
+    },
+    "Attention": {
+      "file": "step06_model.py",
+      "lines": [
+        225,
+        273
+      ],
+      "span_sha256": "3c6c36a080a5ebc53352b50ff128cbd936c678282fba06d643471be137293e45"
+    },
+    "Attention.forward": {
+      "file": "step06_model.py",
+      "lines": [
+        244,
+        273
+      ],
+      "span_sha256": "db6ff577978dcaa5a71090d9a7a3a95846aaf6fe0629773b61c0b32972fb7f7e"
+    },
+    "LlamaBlock": {
+      "file": "step06_model.py",
+      "lines": [
+        276,
+        292
+      ],
+      "span_sha256": "426771773782b9f36f9ee5c32d030115f7b3d1f5a33164abbd9753a791fdbbd9"
+    },
+    "LlamaBlock.forward": {
+      "file": "step06_model.py",
+      "lines": [
+        286,
+        292
+      ],
+      "span_sha256": "70181863b83cffb98e1eb948eedbbfa31c33d68b58dde84a458317a1d0b1c2b1"
+    },
+    "MiniLlama": {
+      "file": "step06_model.py",
+      "lines": [
+        295,
+        340
+      ],
+      "span_sha256": "fcd31cb7f79524e6f84f7f3178c1d243af2d02e3961b2be48112b881834e4e71"
+    },
+    "MiniLlama.forward": {
+      "file": "step06_model.py",
+      "lines": [
+        326,
+        340
+      ],
+      "span_sha256": "d5f5de0701f4bd6a0004dd476067f35375a64fc101976350ce35d1c426ce296f"
+    },
+    "load_config": {
+      "file": "step09_real_llama.py",
+      "lines": [
+        74,
+        88
+      ],
+      "span_sha256": "a94b2fe660f4b104009bb73db751b8735eabbb285b54a17df7b306a11654bde4"
+    },
+    "hf_to_ours": {
+      "file": "step09_real_llama.py",
+      "lines": [
+        91,
+        115
+      ],
+      "span_sha256": "91a844f8c2f84d94fd36936d5f96735af06ecf27ecd63b1f52e5276dc7f98256"
+    },
+    "generate": {
+      "file": "step09_real_llama.py",
+      "lines": [
+        146,
+        178
+      ],
+      "span_sha256": "34d04375ac21fcd2c7183486f81feee29a5b6c0d1542e29ad5c660939c7b6a59"
+    },
+    "assert_same_generation": {
+      "file": "step09_real_llama.py",
+      "lines": [
+        181,
+        187
+      ],
+      "span_sha256": "467557ae96be42853d34ed3882f92b6f1b5cf35b044328a5f0c521a1f89585ca"
+    }
+  },
+  "operations": {
+    "llama.rmsnorm": {
+      "file": "step06_model.py",
+      "symbol": "RMSNorm.forward",
+      "lines": [
+        127,
+        133
+      ],
+      "span_sha256": "27d7c1e52ee2c08bca08ec1d9960b8ffd37c3c7e7a03f64cd918df9e1cbf453c"
+    },
+    "llama.rope.build": {
+      "file": "step06_model.py",
+      "symbol": "build_rope_cache",
+      "lines": [
+        156,
+        169
+      ],
+      "span_sha256": "2f1b3bd14a0d95b50b97a020dbff1587b721f323b3e6f4de08a84c05c3640eae"
+    },
+    "llama.rope.apply_q": {
+      "file": "step06_model.py",
+      "symbol": "apply_rope",
+      "lines": [
+        172,
+        177
+      ],
+      "span_sha256": "912befb67fc45eb8730dee39ccc68153cc79cb916772c824b0c01104a4cc08cd"
+    },
+    "llama.rope.apply_k": {
+      "file": "step06_model.py",
+      "symbol": "apply_rope",
+      "lines": [
+        172,
+        177
+      ],
+      "span_sha256": "912befb67fc45eb8730dee39ccc68153cc79cb916772c824b0c01104a4cc08cd"
+    },
+    "llama.attn.q_proj": {
+      "file": "step06_model.py",
+      "symbol": "Attention.forward",
+      "lines": [
+        251,
+        251
+      ],
+      "span_sha256": "bc4e08b6b5ac51e0713afae66982e3172337057ad2b093b0ce32d17787f1affb"
+    },
+    "llama.attn.k_proj": {
+      "file": "step06_model.py",
+      "symbol": "Attention.forward",
+      "lines": [
+        252,
+        252
+      ],
+      "span_sha256": "031b345047871478b15e6acbd4855964756b7423020c6ae341b199c9687607b6"
+    },
+    "llama.attn.v_proj": {
+      "file": "step06_model.py",
+      "symbol": "Attention.forward",
+      "lines": [
+        253,
+        253
+      ],
+      "span_sha256": "c6636f109969884fcbfa234ee8f185dc24a45417b1c9cec025e8adf5ec2b21ab"
+    },
+    "llama.attn.v_heads": {
+      "file": "step06_model.py",
+      "symbol": "Attention.forward",
+      "lines": [
+        253,
+        253
+      ],
+      "span_sha256": "c6636f109969884fcbfa234ee8f185dc24a45417b1c9cec025e8adf5ec2b21ab"
+    },
+    "llama.cache.append": {
+      "file": "step06_model.py",
+      "symbol": "KVCache.append",
+      "lines": [
+        207,
+        218
+      ],
+      "span_sha256": "19190d8de92219859bd369bc779521740a2bd6fb6af43ae8264e421b18a5cbaa"
+    },
+    "llama.gqa.repeat_kv": {
+      "file": "step06_model.py",
+      "symbol": "Attention.forward",
+      "lines": [
+        263,
+        263
+      ],
+      "span_sha256": "29e3a8d45d384cd31d6be66bb2ba5f164ef3be79d0d6f3c5cd1c574f91bad611"
+    },
+    "llama.attn.scores": {
+      "file": "step06_model.py",
+      "symbol": "Attention.forward",
+      "lines": [
+        266,
+        266
+      ],
+      "span_sha256": "346ce5864c8b7f6d03bceff76546bbaa7268e96ef629c6844497bcc83720aae6"
+    },
+    "llama.attn.mask": {
+      "file": "step06_model.py",
+      "symbol": "Attention.forward",
+      "lines": [
+        270,
+        270
+      ],
+      "span_sha256": "c437e3f157fe08a51f0fadb062538801d466af3598fc632e6d8a2992a8afc4c1"
+    },
+    "llama.attn.softmax": {
+      "file": "step06_model.py",
+      "symbol": "Attention.forward",
+      "lines": [
+        271,
+        271
+      ],
+      "span_sha256": "3af1bb7a9f05fa6169aa382d3c2da053e41f0f2169f478c822c49a356fe57352"
+    },
+    "llama.attn.o_proj": {
+      "file": "step06_model.py",
+      "symbol": "Attention.forward",
+      "lines": [
+        273,
+        273
+      ],
+      "span_sha256": "b5166a5e6db70e2d26feb5ccf89a16f4b95933c5dd4a0b5608f46f0a5ced472a"
+    },
+    "llama.swiglu.gate": {
+      "file": "step06_model.py",
+      "symbol": "SwiGLU.forward",
+      "lines": [
+        147,
+        147
+      ],
+      "span_sha256": "eacaf8df7fe612d3daed289d7763b6eb92906095f3fe3d6a5d376e599469367d"
+    },
+    "llama.swiglu.up": {
+      "file": "step06_model.py",
+      "symbol": "SwiGLU.forward",
+      "lines": [
+        147,
+        147
+      ],
+      "span_sha256": "eacaf8df7fe612d3daed289d7763b6eb92906095f3fe3d6a5d376e599469367d"
+    },
+    "llama.swiglu.mul": {
+      "file": "step06_model.py",
+      "symbol": "SwiGLU.forward",
+      "lines": [
+        147,
+        147
+      ],
+      "span_sha256": "eacaf8df7fe612d3daed289d7763b6eb92906095f3fe3d6a5d376e599469367d"
+    },
+    "llama.swiglu.down": {
+      "file": "step06_model.py",
+      "symbol": "SwiGLU.forward",
+      "lines": [
+        147,
+        147
+      ],
+      "span_sha256": "eacaf8df7fe612d3daed289d7763b6eb92906095f3fe3d6a5d376e599469367d"
+    },
+    "llama.block.forward": {
+      "file": "step06_model.py",
+      "symbol": "LlamaBlock.forward",
+      "lines": [
+        286,
+        292
+      ],
+      "span_sha256": "70181863b83cffb98e1eb948eedbbfa31c33d68b58dde84a458317a1d0b1c2b1"
+    },
+    "llama.block.residual_attn": {
+      "file": "step06_model.py",
+      "symbol": "LlamaBlock.forward",
+      "lines": [
+        290,
+        290
+      ],
+      "span_sha256": "1e46aa4d1189ac3cf413dbb8992d462891d480a48a4e37a88550d5841f2f0ce6"
+    },
+    "llama.embed": {
+      "file": "step06_model.py",
+      "symbol": "MiniLlama.forward",
+      "lines": [
+        335,
+        335
+      ],
+      "span_sha256": "d65d7ceaa5d4d067266367b86a7c7efd31079072c32d285863e448e24f1139fe"
+    },
+    "llama.lm_head": {
+      "file": "step06_model.py",
+      "symbol": "MiniLlama.forward",
+      "lines": [
+        340,
+        340
+      ],
+      "span_sha256": "954bbb66bf88b1100fdcb7626a80d3a98bf5a54167d24549dbaea9809ea177b6"
+    },
+    "llama.generate.prefill": {
+      "file": "step09_real_llama.py",
+      "symbol": "generate",
+      "lines": [
+        165,
+        165
+      ],
+      "span_sha256": "9c037402fdd7b137be26a850406a29b722d08909c8fc2d2da90a29db67991420"
+    },
+    "llama.generate.sample": {
+      "file": "step09_real_llama.py",
+      "symbol": "generate",
+      "lines": [
+        169,
+        169
+      ],
+      "span_sha256": "291a19ff906b8b0b16b70e4432f9af3a329934c64bd21bc9d1fb16a42b34cab2"
+    },
+    "llama.generate.decode": {
+      "file": "step09_real_llama.py",
+      "symbol": "generate",
+      "lines": [
+        175,
+        175
+      ],
+      "span_sha256": "e25d3889147b6abfdc1a025a6fc33a9dd4801a7dc9b1f6c8e0202724bfa9007e"
+    }
+  }
+}

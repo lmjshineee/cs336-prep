@@ -1,0 +1,49 @@
+W1030 18:24:04.603000 86515 torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+
+--- 1. 官方 config.json → 我们的 LlamaConfig ---
+hidden_size            = 576   <- → n_embd
+intermediate_size      = 1,536   <- → ffn_hidden（8/3·C 取整）
+num_hidden_layers      = 30   <- → n_layer
+num_attention_heads    = 9   <- → n_head（不是 2 的幂也没关系）
+num_key_value_heads    = 3   <- → n_kv_head（GQA 9:3）
+head_dim               = 64   <- = n_embd / n_head
+rope_theta             = 100000.0   <- Llama-3 系用 1e5（不是 GPT-2 时代的 1e4）
+rms_norm_eps           = 1e-05
+tie_word_embeddings    = True   <- 小模型省参数，输入输出共享
+[OK] 每个字段都真的映射进 LlamaConfig（逐项断言），不是「看起来能对上」
+
+--- 2. 把 272 个张量装进 MiniLlama ---
+权重张量数             = 272   <- safetensors 里的张量个数
+映射后的张量数         = 273   <- 多出来的是共享的 lm_head
+我们的参数量           = 134,515,008
+加载耗时               = 1.32 s
+[OK] 没有 missing / unexpected 的键（strict=True 通过）
+
+--- 3. 和 HuggingFace 的同款模型对比 ---
+prompt                 = 'The capital of France is'
+token ids              = [[504, 3575, 282, 4649, 314]]   <- (B, T)
+max|diff|              = 4.768e-05
+我们 top-5             = [' the', ' Paris', ' located', ' called', ' a']
+官方 top-5             = [' the', ' Paris', ' located', ' called', ' a']
+[OK] 30 层真实权重下，logits 差在 1e-4 量级，top-5 完全一致
+
+--- 4. 用 KV cache 生成，和官方 generate 对比 ---
+[我们的贪心生成] 'The capital of France is the capital of the country.\n\nThe capital of France'
+[官方贪心生成] 'The capital of France is the capital of the country.\n\nThe capital of France'
+[OK] 12 个 token 的贪心生成完全相同
+
+[温度 0.8 + top-k 40 采样]
+The capital of France is the French language. The language of the French, although not one-millionth as common as English, is a very useful and used language, and is used in almost all the areas of the world
+
+--- 5. 真实速度与显存 ---
+prefill 耗时           = 17.7 ms   <- prompt 5 个 token
+decode 速度            = 10.3 ms/token   <- ≈ 97 token/s
+KV cache @256          = 11.2 MiB   <- fp32，demo 上下文
+KV cache @8192         = 180.0 MiB   <- fp16，真实上下文长度
+     若 9 个 query 头各自持有 kv（MHA），同样 8k 上下文要 540.0 MiB，是 GQA 的 3 倍
+
+一句话记住：
+  真实 Llama 权重能直接装进你自己写的 MiniLlama，是因为前面八步每一步
+  都和官方定义对上了；能生成通顺英文，就是「实现正确」最直观的证据。
+
+[OK] 全部检查通过

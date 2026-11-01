@@ -1,0 +1,43 @@
+W1030 18:24:03.093000 86513 torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+
+--- 1. 同一套权重，两个实现，同一种输入 ---
+我们的参数量           = 100,672
+HF 的参数量            = 100,672
+输入 idx               = (2, 16)   <- (B, T)
+我们的 logits          = (2, 16, 64)   <- (B, T, V)
+HF 的 logits           = (2, 16, 64)   <- (B, T, V)
+max|diff|            = 1.192e-07
+[OK] 逐位一致（剩下的 1e-7 只是浮点累加顺序不同，不是实现差异）
+
+--- 2. 为什么「数学上等价」还不够（三个常见写错方式） ---
+去掉 RoPE（不旋转 q/k）                       max|diff| = 5.323e-03
+用 interleaved 配对（HF 用 half-split）      max|diff| = 6.281e-03
+repeat_kv 用整块复制而不是交错                   max|diff| = 4.061e-01
+[OK] 每个错误都被放大到 1e-3 以上，和对齐误差 1e-7 差了 4 个数量级
+
+--- 3. 真实模型的 KV cache 账本（fp16，8192 上下文） ---
+模型                       层   kv头    D    每 token     8k 上下文   说明
+GPT-2 small                12     12   64   36.00 KiB    288.00 MiB   MHA，kv 头和 query 头一样多
+Llama-3-8B                 32      8  128  128.00 KiB      1.00 GiB   GQA，8 组 kv 头
+Llama-3-8B 若用 MHA        32     32  128  512.00 KiB      4.00 GiB   假设不改 GQA
+Llama-3-70B                80      8  128  320.00 KiB      2.50 GiB   GQA，80 层
+SmolLM2-135M               30      3   64   22.50 KiB    180.00 MiB   step09 要加载的真实模型
+[OK] 代码算出的数字和公式一致（2 × 层数 × kv 头 × D × 上下文 × 2 字节）
+     结论：8B 模型在 8k 上下文下，光 KV cache 就要 1 GiB；
+     把 32 个 kv 头换成 8 个，直接省掉 3/4 —— 这就是 GQA 被所有新模型采用的原因。
+
+--- 4. GPT-2 → Llama 改造清单（回顾八步） ---
+位置        GPT-2                     Llama                       好处
+归一化      LayerNorm (γ, β = 2C)     RMSNorm (只有 γ = C)        少一半参数、少一次减均值
+FFN         GELU, C→4C→C              SwiGLU, C→8/3C→C            同参数量下门控更强
+位置编码    学习式 wpe (T×C 参数)     RoPE (0 参数，转 q/k)       可外推、对 KV cache 友好
+注意力      MHA (kv 头 = query 头)    GQA (kv 头 = 1/4~1/8)       KV cache 显存降 4–8 倍
+线性层 bias 有                        全部去掉                    少参数、便于算子融合
+dropout     0.1                       0.0                         数据量大时收益低，还省一次 mask
+输出层      和输入嵌入共享            默认不共享                  小模型仍可共享（如 SmolLM2）
+
+一句话记住：
+  Llama = GPT-2 把「位置、归一化、门控、KV 头」四处换成更省的写法，
+  换完参数量差不多，但同样显存能跑更长的上下文。
+
+[OK] 全部检查通过

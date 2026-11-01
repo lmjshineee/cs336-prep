@@ -1,0 +1,113 @@
+
+======================================================================
+0. 加载真实 GPT-2 small 权重
+======================================================================
+prompt = 'The future of artificial intelligence is'
+prompt 长度 = 6 个 token，每种策略生成 40 个新 token
+
+======================================================================
+1. 同一个 prompt，五种解码策略（各生成 40 个 token）
+======================================================================
+
+[greedy (T→0, argmax)]   用时 0.33s，不同 token 数 33/40
+The future of artificial intelligence is uncertain.  "We're not sure what the future will look
+like," said Dr. Michael S. Schoenfeld, a professor of computer science at the University of
+California, Berkeley. "
+
+[T=0.5, top_k=40]   用时 0.35s，不同 token 数 32/40
+The future of artificial intelligence is a very bright one.  In the coming years, the potential
+for AI to win the battle for the world's most important jobs will be immense. And that will
+require a significant amount of investment
+
+[T=1.0, top_k=40]   用时 0.35s，不同 token 数 37/40
+The future of artificial intelligence is up in the air, but it looks like a pretty good bet.
+Just look at the rise of the "DeepMind" project, which is pushing AI technologies that allow
+people to manipulate data into action
+
+[T=1.5, top_k=40]   用时 0.34s，不同 token 数 36/40
+The future of artificial intelligence is up and down the face of science, and I believe those on
+board the future of smart phones will do just fine in that direction," Thiel told me in a phone
+call shortly after his talk. Asked
+
+[T=1.0, 不设 top_k]   用时 0.33s，不同 token 数 32/40
+The future of artificial intelligence is well known, and will use organic
+growth/awareness/awareness on machines amongst other matters, as well as whole ecosystems in
+India. As predicted, there is a complete lack of a confident AI, even
+
+怎么读这五段：
+  greedy：每一步都选概率最高的 token，完全确定。
+    读起来最「稳」，但容易一直重复同一小段（因为没有随机性把句子推出去）。
+  T=0.5：分布被压尖，几乎只在最有把握的几个词里选，
+    句子通顺、保守，接近 greedy 但不会死锁。
+  T=1.0：用的就是模型输出的原始分布（softmax 不除任何东西），
+    最接近「模型本来的想法」，多样性和通顺度比较平衡。
+  T=1.5：分布被压平，低概率的怪词也有机会被选中，
+    句子开始跑偏、语法变差——但偶尔会有更有创意的搭配。
+  T=1.0 不设 top_k：从全部 50257 个 token 里抽，
+    长尾里那些几乎不可能的 token 被抽中的概率很小，但一旦抽中，
+    后面就会顺着这个错误往下写。top_k=40 的作用就是直接把长尾切掉。
+
+
+======================================================================
+2. 温度如何改变 softmax 概率（同一个位置，top-5 token）
+======================================================================
+softmax(logits / T)：温度只改 logits 的「尺度」，不改排序，
+但 softmax 对尺度很敏感——除以 0.5 相当于把差距放大一倍，
+除以 1.5 相当于把差距缩小到 2/3。
+
+context = 'The future of artificial intelligence is'   (最后一个位置的分布)
+  token             logit   p(T=0.5)   p(T=1.0)   p(T=1.5)
+  （logit 的绝对值不重要——softmax 对整体平移不变，只看相对差）
+  --------------------------------------------------------
+  ' uncertain'    -114.90     0.2858     0.0766     0.0213
+  ' in'           -115.00     0.2350     0.0694     0.0199
+  ' not'          -115.46     0.0948     0.0441     0.0147
+  ' a'            -115.54     0.0806     0.0407     0.0140
+  ' still'        -115.70     0.0580     0.0345     0.0125
+  --------------------------------------------------------
+  max prob                    0.2858     0.0766     0.0213
+  熵(bit)                      3.62       7.55      10.73
+  top-40 质量                 97.3%      61.2%      26.7%
+
+
+context = '1, 2, 3, 4, 5,'   (最后一个位置的分布)
+  token             logit   p(T=0.5)   p(T=1.0)   p(T=1.5)
+  （logit 的绝对值不重要——softmax 对整体平移不变，只看相对差）
+  --------------------------------------------------------
+  ' 6'             -21.48     0.9992     0.9096     0.3471
+  ' 7'             -25.50     0.0003     0.0164     0.0239
+  ' and'           -25.82     0.0002     0.0120     0.0193
+  ' 5'             -25.90     0.0001     0.0109     0.0182
+  ' 8'             -26.61     0.0000     0.0054     0.0114
+  --------------------------------------------------------
+  max prob                    0.9992     0.9096     0.3471
+  熵(bit)                      0.01       0.98       8.91
+  top-40 质量                100.0%      98.4%      52.1%
+
+这两张表放在一起看（下面的数字都是刚才实测的，不是写死的）：
+  · 第一个 context 的分布比较平：T=1.0 时最大的 token 只占 7.7%，
+    T=0.5 时被放大到 28.6%，T=1.5 时又被摊薄到 2.1%。
+    温度确实在改变「候选集的有效大小」（熵：3.62 < 7.55 < 10.73 bit）。
+  · 第二个 context 的分布很尖：模型基本确定下一个词是 ' 6'，
+    T=1.0 时概率 91.0%，即使 T=1.5 也还有 34.7%。
+    对比两个 context 的熵：7.55 bit vs 0.98 bit（都是 T=1.0）。
+  · 所以温度不是「乱说」的开关：模型越确定的地方，温度的影响越小；
+    模型越犹豫的地方，温度调高越容易跑偏。
+  · 熵是最好用的直观指标：熵越大 = 模型越犹豫 = 生成越随机。
+    均匀分布（完全瞎猜）的熵是 log2(50257) ≈ 15.62 bit。
+
+
+======================================================================
+总结
+======================================================================
+  策略                         不同 token 数     耗时(s)
+  ------------------------------------------------
+  greedy (T→0, argmax)           33/40       0.33
+  T=0.5, top_k=40                32/40       0.35
+  T=1.0, top_k=40                37/40       0.35
+  T=1.5, top_k=40                36/40       0.34
+  T=1.0, 不设 top_k                32/40       0.33
+
+总耗时 2.8s
+
+[OK] exp5 完成：解码策略对比 + 温度对 softmax 分布的影响

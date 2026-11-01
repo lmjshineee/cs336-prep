@@ -1,0 +1,58 @@
+
+--- 1. 结构：没有位置嵌入 ---
+vocab_size             = 30
+block_size             = 64   <- RoPE 表的最大长度
+head_dim               = 16   <- = C / n_head
+rope_cos               = (64, 16)   <- (block_size, head_dim)，不进 checkpoint
+位置嵌入参数           = 0   <- 整个模型一个都没有
+[OK] RoPE 表 = half-split + cat(freqs, freqs)，theta=10000，与 HF 定义一致
+
+--- 2. 参数分解 ---
+token_embedding        = 1,920
+每层 attn              = 12,288   <- × 2 层
+每层 ffn               = 33,792   <- × 2 层
+每层 norm              = 128   <- 2 个 RMSNorm 的 γ
+blocks 合计            = 92,416   <- = 2 × (12,288 + 33,792 + 128)
+norm                   = 64   <- 最后一层 RMSNorm
+lm_head                = 1,920
+总参数 (不共享)        = 96,320   <- Llama 默认 tie=False
+总参数 (共享)          = 94,400   <- GPT-2 / SmolLM2 用这个
+
+--- 3. KV cache：每层预分配 (B, n_kv_head, block_size, head_dim) ---
+每层 k 的形状          = (1, 2, 64, 16)
+nbytes()               = 32,768   <- 字节
+公式                   = 32,768   <- 2*n_layer*B*T_max*n_kv_head*D*4B
+每 token               = 512   <- 字节/token，只有 MHA 的 1/2
+
+--- 4. 缓存 vs 全量重算：逐步比较 logits ---
+  prefill  max|diff| = 0.00e+00
+  step 1   max|diff| = 1.19e-07
+  step 2   max|diff| = 5.22e-08
+  step 3   max|diff| = 8.94e-08
+  step 4   max|diff| = 7.45e-08
+  step 5   max|diff| = 8.94e-08
+  step 6   max|diff| = 8.94e-08
+  step 7   max|diff| = 7.45e-08
+  step 8   max|diff| = 1.12e-07
+[OK] 每步 logits 都一致（最大 1.19e-07 < 1e-5）
+
+--- 5. 两条贪心解码路径，结果必须逐 token 相同 ---
+序列长度               = 32   <- prompt 16 + 新生成 16
+  生成：Spring arrives, TkrkceTfl. TfTfT
+[OK] 有 cache 与无 cache 的贪心解码结果完全一致
+
+--- 6. 其他自检 ---
+logits                 = (1, 11, 30)   <- (B, T, V)
+loss (随机初始化)      = 3.3997   <- 还没训练，应接近均匀分布
+ln(vocab_size)         = 3.4012   <- V = 30
+[OK] 随机初始化时 loss ≈ ln(V)（差 0.0015 < 0.05）
+[OK] 逐 token 走缓存 prefill 与整段前向一致（max|diff| = 1.2e-07）
+[OK] RMSNorm 对 bf16 输入返回 bf16（内部 float32 计算，最后统一转回）
+[OK] 改未来 token，前面位置的 logits 不变（端到端因果性）
+[OK] 超过 block_size 抛 ValueError：序列超长：start_pos 0 + T 65 = 65 > block_size 64（RoPE 表只建到 block_size）
+
+一句话记住：
+  Llama = GPT-2 的骨架 - 位置嵌入 - bias - 权重共享
+       + RMSNorm + RoPE + GQA + SwiGLU + KV cache。
+
+[OK] 全部检查通过

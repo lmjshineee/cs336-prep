@@ -1,0 +1,86 @@
+
+--- 1. 实验设计：唯一的变量是架构 ---
+corpus                 = 438 chars   <- 8 句英文重复两遍，字符级分词
+vocab_size             = 30   <- 字符级，空格和标点都算一个 token
+budget                 = 500 steps x batch 16 x block 32   <- 512 tokens/step
+两个模型共用同一串 batch 和同一套 AdamW 配方，唯一不同的是结构。
+这里的「同预算」指 500 步 x batch 16 x block 32 = 同样的
+训练 token 数，不是同参数量：Llama 反而少 8,640（8.2%）。
+
+--- 2. 参数量分解（实测 sum(p.numel())，C=64, 2 层, 词表 30）---
+item                           GPT-2     Llama     delta
+--------------------------------------------------------
+token_embedding                1,920     1,920        +0
+position_embedding             4,096         0    -4,096
+lm_head                            0     1,920    +1,920
+attention（2 层）             32,768    24,576    -8,192
+ffn（2 层）                   65,536    67,584    +2,048
+norm（2 层 + 最终）              640       320      -320
+--------------------------------------------------------
+total                        104,960    96,320    -8,640
+Llama 是 GPT-2 的 91.8%：attention 少 25%（4C² → 3C²），FFN 多 3.1%（SwiGLU 三矩阵）。
+[OK] 实测分解与参数量公式逐项一致，两个 total 也等于 params 总数
+
+--- 3. 分别训练（同一串 batch，同一优化器配方）---
+AdamW lr=0.003 betas=(0.9, 0.95) wd=0.1 clip=1.0，warmup 50 步 + cosine
+warmup 是前 10% 步把学习率从 0 线性拉到最大值，避免一开始大步长搅乱随机初始化；
+GPT-2 当年用 Adam + 手工 warmup，这里统一 AdamW + cosine，只为只留下架构一个变量。
+[OK] 两个模型都满足因果性：改未来 token，不影响过去位置的 logits
+  [GPT-2] step 100 | loss 1.1628
+  [GPT-2] step 200 | loss 0.3167
+  [GPT-2] step 300 | loss 0.1523
+  [GPT-2] step 400 | loss 0.1403
+  [GPT-2] step 500 | loss 0.1088
+  [Llama] step 100 | loss 0.3821
+  [Llama] step 200 | loss 0.1771
+  [Llama] step 300 | loss 0.1181
+  [Llama] step 400 | loss 0.1120
+  [Llama] step 500 | loss 0.0913
+
+--- 4. loss（真实数字，没有挑好看的）---
+GPT-2 last-50 mean     = 0.1131   <- 最后 50 步训练 loss 均值
+Llama last-50 mean     = 0.0990   <- 最后 50 步训练 loss 均值
+delta (Llama-GPT-2)    = -0.0141   <- 负数 = Llama 更低
+fixed eval batches     = GPT-2 0.1107 | Llama 0.0996   <- 8 个固定评测 batch，不参与训练
+说明：这 8 个 batch 仍来自同一份 438 字符语料，固定下来只为减少抖动，不是泛化
+指标（模型基本背下了语料，别把它当验证集）。
+[OK] 两个模型都从 ln(V) 附近开始，并在 500 步内明显下降
+
+[OK] 图已保存: llama_steps/figs/step07_loss.png (150 dpi, 215 KiB)
+
+--- 5. 速度（CPU fp32，含前向 + 反向 + clip + step）---
+GPT-2                  = 2.6 ms/step = 194,529 tokens/s
+Llama                  = 3.2 ms/step = 159,113 tokens/s
+（玩具模型上 Python/调度开销占比很大，ms/step 只代表这台机器）
+
+--- 6. 生成样例（同一 prompt，总长 60 字符）---
+prompt = "Spring arrives, and "   -> 各自续写 40 个字符
+GPT-2 greedy   | Spring arrives, and the wind moves throves moves moves throu
+Llama greedy   | Spring arrives, and the wind moves through the ves, rind the
+GPT-2 T=0.8    | Spring arrives, and the wind moves throves moves moves rooug
+Llama T=0.8    | Spring arrives, and the wind moves through the valles the  c
+注意：两边都超出了训练长度（训练 block=32）：GPT-2 在查没训练过的位置行，RoPE 不越界
+      但远距离同样会退化；这段样例对两者都偏苛刻（loss 对照只发生在长度 32 内，不受影响）。
+
+--- 7. KV cache：每生成一个 token 要多存多少字节 ---
+公式：2 · n_layer · n_kv_head · head_dim · sizeof(dtype)（K、V 各一份）
+toy 配置 fp32：GPT-2 MHA(4 组 KV) 1,024 B/token | Llama GQA(2 组 KV) 512 B/token
+toy 配置 fp16：GPT-2 512 B/token | Llama 256 B/token
+真实 Llama-3-8B（32 层, 8 组 KV, head_dim 128, fp16）：131,072 B/token (128 KiB)
+  若用 GPT-3 式 MHA（32 组 KV）同规模：524,288 B/token (512 KiB)，正好是 GQA 的 4 倍
+  8192 token 上下文：GQA 1 GiB | MHA 4 GiB
+[OK] step06 的 KVCache.nbytes() = 32,768 B，与公式（512 B/token x 64 位置）一致
+
+--- 8. 结论（只基于上面的实测数字）---
+参数量（实测）：GPT-2 104,960 → Llama 96,320（-8,640，-8.2%）。
+玩具规模 loss（最后 50 步均值）：GPT-2 0.1131 → Llama 0.0990（-0.0141）；固定评测 batch：0.1107 → 0.0996。
+每 token KV（公式）：toy fp32 1,024 B → 512 B；真实 8B 规模 fp16 512 KiB → 128 KiB（8K 上下文 4 GiB → 1 GiB）。
+玩具速度：2.6 → 3.2 ms/step（CPU，只代表这台机器）。
+判断：Llama 略好 0.0141，方向对但幅度小，离「显著」还差得远。
+两件事要分开：玩具 loss 受 438 字符/500 步限制不能外推；Llama 在真实规模的主要收益是 KV 显存与长上下文吞吐（上面 4 倍），不是这 0.0x 的 loss。
+
+一句话记住：
+  同预算下 Llama 赢在参数更少、KV 显存更小，玩具 loss 差距别当真；但玩具规模上
+  training 反而略慢（GQA 的 repeat + SwiGLU 三矩阵固定开销），真实规模会被吞掉。
+
+[OK] 全部检查通过

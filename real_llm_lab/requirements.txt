@@ -1,0 +1,10 @@
+# 真实 LLM 实验额外需要的库（仓库自带的 .venv 里已经有 torch/numpy，
+# 这里只补三样：读 safetensors 权重、用 HuggingFace 当对照、画图）
+#
+# 安装（在仓库根目录，用 uv 或 pip 都行）：
+#     uv pip install --python .venv/bin/python -r real_llm_lab/requirements.txt
+#
+# 安装后 .venv 里的 torch/numpy 版本不变。
+transformers>=4.40
+safetensors>=0.4
+matplotlib>=3.8
