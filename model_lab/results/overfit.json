@@ -1,0 +1,191 @@
+{
+  "config": {
+    "vocab_size": 256,
+    "context_length": 64,
+    "d_model": 64,
+    "num_layers": 2,
+    "num_heads": 4,
+    "d_ff": 128,
+    "tie_weights": false,
+    "batch_size": 8,
+    "seq_len": 64,
+    "optimizer": "AdamW",
+    "lr": 0.003,
+    "weight_decay": 0.0,
+    "max_steps": 300,
+    "max_seconds": 90.0,
+    "seed": 0,
+    "loss": "F.cross_entropy"
+  },
+  "steps_run": 300,
+  "max_seconds": 90.0,
+  "curve": [
+    [
+      0,
+      5.6737446784973145
+    ],
+    [
+      10,
+      2.814185619354248
+    ],
+    [
+      20,
+      1.7734495401382446
+    ],
+    [
+      30,
+      0.8258587121963501
+    ],
+    [
+      40,
+      0.20558492839336395
+    ],
+    [
+      50,
+      0.04964996874332428
+    ],
+    [
+      60,
+      0.021632632240653038
+    ],
+    [
+      70,
+      0.01374152023345232
+    ],
+    [
+      80,
+      0.010653285309672356
+    ],
+    [
+      90,
+      0.009109525009989738
+    ],
+    [
+      100,
+      0.008166084066033363
+    ],
+    [
+      110,
+      0.007506264373660088
+    ],
+    [
+      120,
+      0.006999325938522816
+    ],
+    [
+      130,
+      0.006587694864720106
+    ],
+    [
+      140,
+      0.00624218862503767
+    ],
+    [
+      150,
+      0.005946345627307892
+    ],
+    [
+      160,
+      0.005689607001841068
+    ],
+    [
+      170,
+      0.005464623682200909
+    ],
+    [
+      180,
+      0.005265979561954737
+    ],
+    [
+      190,
+      0.005089473444968462
+    ],
+    [
+      200,
+      0.004931751638650894
+    ],
+    [
+      210,
+      0.004790127277374268
+    ],
+    [
+      220,
+      0.00466240243986249
+    ],
+    [
+      230,
+      0.004546719137579203
+    ],
+    [
+      240,
+      0.004441593773663044
+    ],
+    [
+      250,
+      0.0043457187712192535
+    ],
+    [
+      260,
+      0.004257993772625923
+    ],
+    [
+      270,
+      0.004177477210760117
+    ],
+    [
+      280,
+      0.0041034328751266
+    ],
+    [
+      290,
+      0.004035096615552902
+    ],
+    [
+      300,
+      0.003971956670284271
+    ]
+  ],
+  "final_loss": 0.003971956670284271,
+  "initial_loss": 5.6737446784973145,
+  "elapsed_s": 1.7172,
+  "train_elapsed_s": 1.2927,
+  "tokens_per_s": 118818.7,
+  "threads": 2,
+  "peak_rss_mib": 316.1,
+  "sample": "on a time there was a little boy named Ben. Ben loved to ame to ",
+  "sample_prompt": "\nOnce up",
+  "sample_hex": "6f6e20612074696d65207468657265207761732061206c6974746c6520626f79206e616d65642042656e2e2042656e206c6f76656420746f20616d6520746f20",
+  "sample_bytes": 64,
+  "num_parameters": 115008,
+  "data": {
+    "path": "/Users/yunni/Projects/assignment1-basics/tests/fixtures/tinystories_sample.txt",
+    "source": "tinystories_sample.txt",
+    "bytes": 3794,
+    "fallback_reason": null,
+    "batch_shape": [
+      8,
+      64
+    ],
+    "tokens_per_step": 512,
+    "offset": 0
+  },
+  "checks": {
+    "all_losses_finite": true,
+    "final_loss_below_initial": true,
+    "elapsed_within_120s": true,
+    "two_threads": true,
+    "steps_at_least_one": true,
+    "sample_nonempty": true,
+    "final_loss_below_0_5_target": true,
+    "timed_out": false,
+    "param_count_consistent": true
+  },
+  "meta": {
+    "spec": "model_lab/SPEC.md §7.2",
+    "python": "3.14.3",
+    "torch": "2.14.1",
+    "platform": "macOS-27.2-arm64-arm-64bit-Mach-O",
+    "generation_elapsed_s": 0.0227,
+    "curve_kind": "eval_loss_on_fixed_batch"
+  }
+}

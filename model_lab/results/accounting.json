@@ -1,0 +1,436 @@
+{
+  "meta": {
+    "spec": "model_lab/SPEC.md §7.1",
+    "source": "handout §3.5 transformer_accounting (a)-(e)",
+    "vocab_size": 50257,
+    "d_ff_rule": "nearest multiple of 64 to 8/3*d_model (minimum 64)",
+    "bytes_per_param": 4,
+    "flops_rule": "2*m*n*p for A(m,n) @ B(n,p); embedding lookup not counted",
+    "python": "3.14.3",
+    "torch": "2.14.1"
+  },
+  "configs": {
+    "gpt2_small": {
+      "config": {
+        "vocab_size": 50257,
+        "context_length": 1024,
+        "d_model": 768,
+        "num_layers": 12,
+        "num_heads": 12,
+        "d_ff": 2048
+      },
+      "params": {
+        "token_embeddings": 38597376,
+        "attention_per_layer": 2359296,
+        "ffn_per_layer": 4718592,
+        "ln_per_layer": 1536,
+        "per_layer_total": 7079424,
+        "attention_total": 28311552,
+        "ffn_total": 56623104,
+        "ln_total": 18432,
+        "ln_final": 768,
+        "lm_head": 38597376,
+        "non_embedding_total": 84953856,
+        "total": 162148608,
+        "total_billions": 0.162148608
+      },
+      "memory_fp32_mib": 618.5478515625,
+      "memory_fp32_gib": 0.6040506362915039,
+      "flops": {
+        "total": 291648307200,
+        "total_tflops": 0.2916483072,
+        "breakdown": {
+          "projections": 57982058496,
+          "attention": 38654705664,
+          "ffn": 115964116992,
+          "lm_head": 79047426048,
+          "total": 291648307200
+        },
+        "proportions": {
+          "projections": 0.1988081434542268,
+          "attention": 0.13253876230281786,
+          "ffn": 0.3976162869084536,
+          "lm_head": 0.2710368073345018
+        },
+        "per_layer_total": 17716740096,
+        "formulas": {
+          "projections_per_layer": "8*T*d^2",
+          "attention_per_layer": "4*T^2*d",
+          "ffn_per_layer": "6*T*d*d_ff",
+          "lm_head": "2*T*d*V"
+        }
+      }
+    },
+    "gpt2_medium": {
+      "config": {
+        "vocab_size": 50257,
+        "context_length": 1024,
+        "d_model": 1024,
+        "num_layers": 24,
+        "num_heads": 16,
+        "d_ff": 2752
+      },
+      "params": {
+        "token_embeddings": 51463168,
+        "attention_per_layer": 4194304,
+        "ffn_per_layer": 8454144,
+        "ln_per_layer": 2048,
+        "per_layer_total": 12650496,
+        "attention_total": 100663296,
+        "ffn_total": 202899456,
+        "ln_total": 49152,
+        "ln_final": 1024,
+        "lm_head": 51463168,
+        "non_embedding_total": 303612928,
+        "total": 406539264,
+        "total_billions": 0.406539264
+      },
+      "memory_fp32_mib": 1550.82421875,
+      "memory_fp32_gib": 1.5144767761230469,
+      "flops": {
+        "total": 830172299264,
+        "total_tflops": 0.830172299264,
+        "breakdown": {
+          "projections": 206158430208,
+          "attention": 103079215104,
+          "ffn": 415538085888,
+          "lm_head": 105396568064,
+          "total": 830172299264
+        },
+        "proportions": {
+          "projections": 0.24833209972287973,
+          "attention": 0.12416604986143986,
+          "ffn": 0.5005443885039295,
+          "lm_head": 0.12695746191175097
+        },
+        "per_layer_total": 30198988800,
+        "formulas": {
+          "projections_per_layer": "8*T*d^2",
+          "attention_per_layer": "4*T^2*d",
+          "ffn_per_layer": "6*T*d*d_ff",
+          "lm_head": "2*T*d*V"
+        }
+      }
+    },
+    "gpt2_large": {
+      "config": {
+        "vocab_size": 50257,
+        "context_length": 1024,
+        "d_model": 1280,
+        "num_layers": 36,
+        "num_heads": 20,
+        "d_ff": 3392
+      },
+      "params": {
+        "token_embeddings": 64328960,
+        "attention_per_layer": 6553600,
+        "ffn_per_layer": 13025280,
+        "ln_per_layer": 2560,
+        "per_layer_total": 19581440,
+        "attention_total": 235929600,
+        "ffn_total": 468910080,
+        "ln_total": 92160,
+        "ln_final": 1280,
+        "lm_head": 64328960,
+        "non_embedding_total": 704933120,
+        "total": 833591040,
+        "total_billions": 0.83359104
+      },
+      "memory_fp32_mib": 3179.8974609375,
+      "memory_fp32_gib": 3.1053686141967773,
+      "flops": {
+        "total": 1768530903040,
+        "total_tflops": 1.76853090304,
+        "breakdown": {
+          "projections": 483183820800,
+          "attention": 193273528320,
+          "ffn": 960327843840,
+          "lm_head": 131745710080,
+          "total": 1768530903040
+        },
+        "proportions": {
+          "projections": 0.273211974961498,
+          "attention": 0.10928478998459921,
+          "ffn": 0.5430088002359773,
+          "lm_head": 0.07449443481792539
+        },
+        "per_layer_total": 45466255360,
+        "formulas": {
+          "projections_per_layer": "8*T*d^2",
+          "attention_per_layer": "4*T^2*d",
+          "ffn_per_layer": "6*T*d*d_ff",
+          "lm_head": "2*T*d*V"
+        }
+      }
+    },
+    "gpt2_xl": {
+      "config": {
+        "vocab_size": 50257,
+        "context_length": 1024,
+        "d_model": 1600,
+        "num_layers": 48,
+        "num_heads": 25,
+        "d_ff": 4288
+      },
+      "params": {
+        "token_embeddings": 80411200,
+        "attention_per_layer": 10240000,
+        "ffn_per_layer": 20582400,
+        "ln_per_layer": 3200,
+        "per_layer_total": 30825600,
+        "attention_total": 491520000,
+        "ffn_total": 987955200,
+        "ln_total": 153600,
+        "ln_final": 1600,
+        "lm_head": 80411200,
+        "non_embedding_total": 1479630400,
+        "total": 1640452800,
+        "total_billions": 1.6404528
+      },
+      "memory_fp32_mib": 6257.830810546875,
+      "memory_fp32_gib": 6.111162900924683,
+      "flops": {
+        "total": 3516769894400,
+        "total_tflops": 3.5167698944,
+        "breakdown": {
+          "projections": 1006632960000,
+          "attention": 322122547200,
+          "ffn": 2023332249600,
+          "lm_head": 164682137600,
+          "total": 3516769894400
+        },
+        "proportions": {
+          "projections": 0.28623793714878315,
+          "attention": 0.09159613988761062,
+          "ffn": 0.5753382536690541,
+          "lm_head": 0.046827669294552066
+        },
+        "per_layer_total": 69835161600,
+        "formulas": {
+          "projections_per_layer": "8*T*d^2",
+          "attention_per_layer": "4*T^2*d",
+          "ffn_per_layer": "6*T*d*d_ff",
+          "lm_head": "2*T*d*V"
+        }
+      }
+    },
+    "gpt2_xl_ctx16384": {
+      "config": {
+        "vocab_size": 50257,
+        "context_length": 16384,
+        "d_model": 1600,
+        "num_layers": 48,
+        "num_heads": 25,
+        "d_ff": 4288
+      },
+      "params": {
+        "token_embeddings": 80411200,
+        "attention_per_layer": 10240000,
+        "ffn_per_layer": 20582400,
+        "ln_per_layer": 3200,
+        "per_layer_total": 30825600,
+        "attention_total": 491520000,
+        "ffn_total": 987955200,
+        "ln_total": 153600,
+        "ln_final": 1600,
+        "lm_head": 80411200,
+        "non_embedding_total": 1479630400,
+        "total": 1640452800,
+        "total_billions": 1.6404528
+      },
+      "memory_fp32_mib": 6257.830810546875,
+      "memory_fp32_gib": 6.111162900924683,
+      "flops": {
+        "total": 133577729638400,
+        "total_tflops": 133.5777296384,
+        "breakdown": {
+          "projections": 16106127360000,
+          "attention": 82463372083200,
+          "ffn": 32373315993600,
+          "lm_head": 2634914201600,
+          "total": 133577729638400
+        },
+        "proportions": {
+          "projections": 0.1205749446677968,
+          "attention": 0.6173437166991196,
+          "ffn": 0.24235563878227157,
+          "lm_head": 0.019725699850812056
+        },
+        "per_layer_total": 2727975321600,
+        "formulas": {
+          "projections_per_layer": "8*T*d^2",
+          "attention_per_layer": "4*T^2*d",
+          "ffn_per_layer": "6*T*d*d_ff",
+          "lm_head": "2*T*d*V"
+        }
+      }
+    }
+  },
+  "checks": {
+    "official_fixture": {
+      "name": "official_model_pt_param_count",
+      "path": "/Users/yunni/Projects/assignment1-basics/tests/fixtures/ts_tests/model.pt",
+      "skipped": false,
+      "config": {
+        "vocab_size": 10000,
+        "context_length": 16,
+        "d_model": 64,
+        "num_layers": 3,
+        "num_heads": 4,
+        "d_ff": 128
+      },
+      "actual_params": 1403328,
+      "analytic_params": 1403328,
+      "diff": 0,
+      "match": true,
+      "num_state_dict_entries": 30,
+      "state_dict_has_orig_mod_prefix": true
+    },
+    "toy_transformer": {
+      "name": "toy_transformer_sum_numel",
+      "skipped": false,
+      "config": {
+        "vocab_size": 256,
+        "context_length": 64,
+        "d_model": 64,
+        "num_layers": 2,
+        "num_heads": 4,
+        "d_ff": 128
+      },
+      "actual_params": 115008,
+      "analytic_params": 115008,
+      "diff": 0,
+      "match": true,
+      "num_parameters_returned": 115008,
+      "num_parameters_match": true
+    },
+    "d_ff_rule": {
+      "name": "d_ff_default_rule",
+      "rule": "nearest multiple of 64 to 8/3*d_model (minimum 64)",
+      "expected": {
+        "512": 1344,
+        "768": 2048,
+        "1024": 2752,
+        "1280": 3392,
+        "1600": 4288
+      },
+      "actual": {
+        "512": 1344,
+        "768": 2048,
+        "1024": 2752,
+        "1280": 3392,
+        "1600": 4288
+      },
+      "match": true,
+      "all_multiple_of_64": true,
+      "per_config": {
+        "gpt2_small": {
+          "d_model": 768,
+          "d_ff": 2048,
+          "is_multiple_of_64": true
+        },
+        "gpt2_medium": {
+          "d_model": 1024,
+          "d_ff": 2752,
+          "is_multiple_of_64": true
+        },
+        "gpt2_large": {
+          "d_model": 1280,
+          "d_ff": 3392,
+          "is_multiple_of_64": true
+        },
+        "gpt2_xl": {
+          "d_model": 1600,
+          "d_ff": 4288,
+          "is_multiple_of_64": true
+        },
+        "gpt2_xl_ctx16384": {
+          "d_model": 1600,
+          "d_ff": 4288,
+          "is_multiple_of_64": true
+        }
+      },
+      "handout_reference": {
+        "gpt2_xl": {
+          "expected": 4288,
+          "actual": 4288
+        }
+      }
+    },
+    "xl_ctx16384": {
+      "name": "xl_ctx16384_vs_1024",
+      "total_flops_ratio": 37.983073573026545,
+      "total_flops_ctx16384": 133577729638400,
+      "total_flops_ctx1024": 3516769894400,
+      "proportions_ctx1024": {
+        "projections": 0.28623793714878315,
+        "attention": 0.09159613988761062,
+        "ffn": 0.5753382536690541,
+        "lm_head": 0.046827669294552066
+      },
+      "proportions_ctx16384": {
+        "projections": 0.1205749446677968,
+        "attention": 0.6173437166991196,
+        "ffn": 0.24235563878227157,
+        "lm_head": 0.019725699850812056
+      },
+      "attention_share_delta": 0.525747576811509
+    },
+    "scale_trend": {
+      "name": "scale_trend",
+      "order": [
+        "gpt2_small",
+        "gpt2_medium",
+        "gpt2_large",
+        "gpt2_xl"
+      ],
+      "per_model": {
+        "gpt2_small": {
+          "params_total": 162148608,
+          "d_ff": 2048,
+          "proportions": {
+            "projections": 0.1988081434542268,
+            "attention": 0.13253876230281786,
+            "ffn": 0.3976162869084536,
+            "lm_head": 0.2710368073345018
+          }
+        },
+        "gpt2_medium": {
+          "params_total": 406539264,
+          "d_ff": 2752,
+          "proportions": {
+            "projections": 0.24833209972287973,
+            "attention": 0.12416604986143986,
+            "ffn": 0.5005443885039295,
+            "lm_head": 0.12695746191175097
+          }
+        },
+        "gpt2_large": {
+          "params_total": 833591040,
+          "d_ff": 3392,
+          "proportions": {
+            "projections": 0.273211974961498,
+            "attention": 0.10928478998459921,
+            "ffn": 0.5430088002359773,
+            "lm_head": 0.07449443481792539
+          }
+        },
+        "gpt2_xl": {
+          "params_total": 1640452800,
+          "d_ff": 4288,
+          "proportions": {
+            "projections": 0.28623793714878315,
+            "attention": 0.09159613988761062,
+            "ffn": 0.5753382536690541,
+            "lm_head": 0.046827669294552066
+          }
+        }
+      }
+    }
+  },
+  "runtime": {
+    "elapsed_s": 0.0059,
+    "threads": 2,
+    "peak_rss_mib": 212.5
+  }
+}

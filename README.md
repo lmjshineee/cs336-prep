@@ -17,6 +17,8 @@
 | `BPE_TOKENIZER_TUTORIAL.md` | BPE 分词器教程：学习路线、从零实现、实验与“移植到已有模型” |
 | `bpe_lab/` | BPE 教学实现（含 20 个测试）、小语料训练 demo、GPT-2 换 tokenizer 的 BPB 实验 |
 | `docs/bpe/SOURCES.md` | BPE 教程的材料地图、精确规格、测试地图与勘误 |
+| `MODEL_TRANSFORMER_TUTORIAL.md` | Transformer 教程：形状语言、逐组件公式与代码、正确性验证、资源核算与过拟合实验 |
+| `model_lab/` | A1 规范 pre-norm Transformer 教学实现（45 个测试、13 个官方快照逐元素对齐、资源核算、单 batch 过拟合） |
 | `demo/docs/` | 演示页面的设计、审查与交接文档 |
 | `demo/GPT2-LLaMA-Atlas/` | GPT-2 / LLaMA 交互式图谱；单文件版：`atlas.html`、`llama-atlas.html`，浏览器直接打开即可 |
 
