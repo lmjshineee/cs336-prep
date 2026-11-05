@@ -1,0 +1,263 @@
+{
+  "generated_at": "2026-11-03 19:58:56",
+  "experiment": "replace GPT-2 tokenizer with a freshly trained 4096-token byte-level BPE",
+  "config": {
+    "corpus": "/Users/yunni/Projects/assignment1-basics/tests/fixtures/tinystories_sample_5M.txt",
+    "weights": "/Users/yunni/Projects/cs336-prep-code/real_llm_lab/weights/gpt2",
+    "vocab_size": 4096,
+    "train_fraction": 0.8,
+    "eval_fraction": 0.05,
+    "steps_phase1": 200,
+    "steps_phase2": 400,
+    "batch_size": 4,
+    "seq_len": 128,
+    "lr_phase1": 0.001,
+    "lr_phase2": 0.0001,
+    "eval_window": 256,
+    "eval_batch": 4,
+    "curve_bytes": 8192,
+    "lm_train_bytes": 400000,
+    "seed": 0,
+    "threads": 8,
+    "quick_mode": false
+  },
+  "corpus": {
+    "total_docs": 6458,
+    "train_docs": 5166,
+    "eval_docs": 323,
+    "train_bytes": 4199316,
+    "eval_bytes": 259849,
+    "tokenizer_train_bytes": 4199316
+  },
+  "new_tokenizer": {
+    "vocab_size": 4096,
+    "num_merges": 3839,
+    "special_tokens": [
+      "<|endoftext|>"
+    ],
+    "special_ids": {
+      "<|endoftext|>": 256
+    },
+    "train_seconds": 0.912,
+    "longest_token": "b' uncomfortable'",
+    "embedding_init": {
+      "special": 1,
+      "single_byte": 256,
+      "multi_byte_utf8_mean": 3838,
+      "multi_byte_invalid_utf8_byte_mean": 1,
+      "overlap_exact_old_token": 3468,
+      "multi_byte_tokens": 3839,
+      "non_special_tokens": 4095,
+      "overlap_count_incl_single_byte": 3724,
+      "overlap_rate": 0.9094017094017094,
+      "multi_byte_overlap_rate": 0.9033602500651211
+    },
+    "eval_tokens": 65132,
+    "eval_tokens_per_byte": 0.25065,
+    "eval_bytes_per_token": 3.9896
+  },
+  "old_tokenizer": {
+    "vocab_size": 50257,
+    "eval_tokens": 63744,
+    "eval_tokens_per_byte": 0.24531,
+    "eval_bytes_per_token": 4.0764
+  },
+  "bpb": {
+    "baseline_old_tokenizer": {
+      "bpb": 0.95581,
+      "loss_sum_nats": 171460.93585,
+      "scored_bytes": 258801,
+      "scored_tokens": 63495,
+      "eval_total_bytes": 259849,
+      "coverage": 0.99597,
+      "windows": 249,
+      "seconds": 13.91,
+      "tokens_per_byte": 0.24531,
+      "num_tokens": 63744
+    },
+    "after_swap_untrained": {
+      "bpb": 1.01947,
+      "loss_sum_nats": 182857.27805,
+      "scored_bytes": 258768,
+      "scored_tokens": 64877,
+      "eval_total_bytes": 259849,
+      "coverage": 0.99584,
+      "windows": 255,
+      "seconds": 11.05,
+      "tokens_per_byte": 0.25065,
+      "num_tokens": 65132
+    },
+    "after_phase1": {
+      "bpb": 0.9235,
+      "loss_sum_nats": 165642.17215,
+      "scored_bytes": 258768,
+      "scored_tokens": 64877,
+      "eval_total_bytes": 259849,
+      "coverage": 0.99584,
+      "windows": 255,
+      "seconds": 11.56
+    },
+    "after_training": {
+      "bpb": 0.78218,
+      "loss_sum_nats": 140295.87242,
+      "scored_bytes": 258768,
+      "scored_tokens": 64877,
+      "eval_total_bytes": 259849,
+      "coverage": 0.99584,
+      "windows": 255,
+      "seconds": 12.77,
+      "tokens_per_byte": 0.25065,
+      "num_tokens": 65132
+    }
+  },
+  "training": {
+    "curve": [
+      {
+        "step": 0,
+        "phase": "after_swap",
+        "train_loss_mean_last20": null,
+        "eval_slice_bpb": 1.05183,
+        "elapsed_seconds": 27.1
+      },
+      {
+        "step": 100,
+        "phase": "phase1",
+        "train_loss_mean_last20": 2.7261,
+        "eval_slice_bpb": 1.04489,
+        "eval_slice_seconds": 0.37,
+        "elapsed_seconds": 51.0
+      },
+      {
+        "step": 200,
+        "phase": "phase1",
+        "train_loss_mean_last20": 2.4591,
+        "eval_slice_bpb": 1.02584,
+        "eval_slice_seconds": 0.38,
+        "elapsed_seconds": 75.0
+      },
+      {
+        "step": 300,
+        "phase": "phase2",
+        "train_loss_mean_last20": 2.0709,
+        "eval_slice_bpb": 0.86912,
+        "eval_slice_seconds": 0.4,
+        "elapsed_seconds": 126.6
+      },
+      {
+        "step": 400,
+        "phase": "phase2",
+        "train_loss_mean_last20": 1.913,
+        "eval_slice_bpb": 0.87287,
+        "eval_slice_seconds": 0.4,
+        "elapsed_seconds": 166.3
+      },
+      {
+        "step": 500,
+        "phase": "phase2",
+        "train_loss_mean_last20": 1.7514,
+        "eval_slice_bpb": 0.85885,
+        "eval_slice_seconds": 0.4,
+        "elapsed_seconds": 206.4
+      },
+      {
+        "step": 600,
+        "phase": "phase2",
+        "train_loss_mean_last20": 1.6721,
+        "eval_slice_bpb": 0.86752,
+        "eval_slice_seconds": 0.42,
+        "elapsed_seconds": 247.5
+      }
+    ],
+    "phase_times_seconds": {
+      "phase1_seconds": 47.9,
+      "phase2_seconds": 160.9
+    },
+    "nan_in_curve": false
+  },
+  "bpb_gap_closure": {
+    "formula": "(after_swap - after_training) / (after_swap - baseline)",
+    "after_swap_to_baseline_gap": 0.06366,
+    "phase1_closes": 1.5077,
+    "phase1_plus_phase2_closes": 3.7275,
+    "remaining_gap_after_training": -0.17363
+  },
+  "init_ablation": {
+    "steps": 50,
+    "batch_size": 4,
+    "seq_len": 128,
+    "lr": 0.001,
+    "note": "random_init = transformers resize 的默认随机初始化（normal, std=initializer_range=0.02）",
+    "mean_init": {
+      "init": "mean_init",
+      "steps": 50,
+      "bpb_after_ablation": 1.00433,
+      "initial_train_loss": 3.0383,
+      "final_train_loss_mean_last10": 2.9574,
+      "seconds": 26.0
+    },
+    "random_init": {
+      "init": "random_init",
+      "steps": 50,
+      "bpb_after_ablation": 2.17651,
+      "initial_train_loss": 7.5254,
+      "final_train_loss_mean_last10": 6.2791,
+      "seconds": 26.9
+    },
+    "bpb_gap_mean_minus_random": 1.17218
+  },
+  "sanity": {
+    "baseline_bpb_in_0.5_3": true,
+    "swap_makes_it_worse": true,
+    "training_improves": true,
+    "no_nan_in_curve": true,
+    "decode_encode_roundtrip_eval": true,
+    "old_decode_roundtrip_eval": true,
+    "tied_weights_shared": true
+  },
+  "timings_seconds": {
+    "tokenizer_train": 0.91,
+    "swap": 0.1,
+    "baseline_eval": 13.91,
+    "after_swap_eval": 11.05,
+    "phase1_train": 47.9,
+    "after_phase1_eval": 11.56,
+    "phase2_train": 160.9,
+    "after_training_eval": 12.77,
+    "total": 313.4
+  },
+  "peak_rss_mb": 3298.5,
+  "environment": {
+    "python": "3.14.3",
+    "platform": "macOS-27.2-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "cpu_count": 10,
+    "torch": "2.14.1",
+    "transformers": "5.21.0",
+    "threads": 8
+  },
+  "control_original_tokenizer": {
+    "status": "not_run",
+    "reason": "按用户要求立即停止 CPU 密集任务（无风扇机器发烫）；未执行「原 tokenizer 同预算继续训练」对照。因此本 JSON 的结论只用原始 BPB 差值表述，不把 0.782 解释为「换 tokenizer 的收益」。",
+    "planned_config": {
+      "model": "same GPT-2 (original 50257 vocab, no resize)",
+      "training": "600 steps full-parameter, batch 4x128, lr 1e-4, AdamW, clip 1.0",
+      "data": "same new-tokenizer ids? NO -> original tokenizer ids, same 400KB source text",
+      "eval": "same held-out split, same window 256 / batch 4, same BPB formula"
+    }
+  },
+  "vocab512_untrained_reference": {
+    "status": "reference_only_different_config",
+    "source": "bpe_lab/transplant_gpt2.py --quick 冒烟运行（不是主实验）",
+    "config": {
+      "vocab_size": 512,
+      "eval_docs": 40,
+      "eval_bytes": 33554,
+      "steps_phase1": 4,
+      "steps_phase2": 8,
+      "quick_mode": true
+    },
+    "baseline_bpb": 0.9827,
+    "after_swap_untrained_bpb": 2.4309,
+    "note": "eval 子集与主实验不同（33.5KB vs 259.8KB），tokens/byte 0.4156（比旧 tokenizer 的 0.2477 多 68%）。只能示意「词表太小 -> 序列变长 -> 未训练 BPB 明显变差」的量级，不能与主实验数字直接相减。"
+  }
+}

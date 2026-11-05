@@ -1,0 +1,293 @@
+{
+  "generated_at": "2026-11-03 19:48:02",
+  "corpus": "/Users/yunni/Projects/assignment1-basics/tests/fixtures/tinystories_sample_5M.txt",
+  "config": {
+    "bytes_requested": 320000,
+    "train_chars": 299754,
+    "train_bytes": 299896,
+    "holdout_chars": 20246,
+    "holdout_bytes": 20248,
+    "vocab_size": 1000,
+    "special_tokens": [
+      "<|endoftext|>"
+    ],
+    "pretokenizer": "gpt2_regex",
+    "impl": "fast（反向索引 + 懒删除堆增量更新）"
+  },
+  "train": {
+    "seconds": 0.1237,
+    "peak_rss_mb_after_train": 53.4,
+    "peak_rss_mb_before": 42.4,
+    "num_merges": 743
+  },
+  "vocab": {
+    "size": 1000,
+    "num_special": 1,
+    "num_merges": 743,
+    "longest_token": "b' unexpected'",
+    "longest_token_len_bytes": 11,
+    "top5_longest_tokens": [
+      "b' unexpected'",
+      "b' something'",
+      "b' happened'",
+      "b' remember'",
+      "b' together'"
+    ],
+    "first_15_merges": [
+      {
+        "pair": [
+          "b'h'",
+          "b'e'"
+        ],
+        "merged_token": "b'he'",
+        "merged_len": 2
+      },
+      {
+        "pair": [
+          "b' '",
+          "b't'"
+        ],
+        "merged_token": "b' t'",
+        "merged_len": 2
+      },
+      {
+        "pair": [
+          "b' '",
+          "b'a'"
+        ],
+        "merged_token": "b' a'",
+        "merged_len": 2
+      },
+      {
+        "pair": [
+          "b' '",
+          "b's'"
+        ],
+        "merged_token": "b' s'",
+        "merged_len": 2
+      },
+      {
+        "pair": [
+          "b' '",
+          "b'w'"
+        ],
+        "merged_token": "b' w'",
+        "merged_len": 2
+      },
+      {
+        "pair": [
+          "b' t'",
+          "b'he'"
+        ],
+        "merged_token": "b' the'",
+        "merged_len": 4
+      },
+      {
+        "pair": [
+          "b'n'",
+          "b'd'"
+        ],
+        "merged_token": "b'nd'",
+        "merged_len": 2
+      },
+      {
+        "pair": [
+          "b'e'",
+          "b'd'"
+        ],
+        "merged_token": "b'ed'",
+        "merged_len": 2
+      },
+      {
+        "pair": [
+          "b' '",
+          "b'b'"
+        ],
+        "merged_token": "b' b'",
+        "merged_len": 2
+      },
+      {
+        "pair": [
+          "b' t'",
+          "b'o'"
+        ],
+        "merged_token": "b' to'",
+        "merged_len": 3
+      },
+      {
+        "pair": [
+          "b' a'",
+          "b'nd'"
+        ],
+        "merged_token": "b' and'",
+        "merged_len": 4
+      },
+      {
+        "pair": [
+          "b' '",
+          "b'h'"
+        ],
+        "merged_token": "b' h'",
+        "merged_len": 2
+      },
+      {
+        "pair": [
+          "b' '",
+          "b'f'"
+        ],
+        "merged_token": "b' f'",
+        "merged_len": 2
+      },
+      {
+        "pair": [
+          "b' '",
+          "b'T'"
+        ],
+        "merged_token": "b' T'",
+        "merged_len": 2
+      },
+      {
+        "pair": [
+          "b'i'",
+          "b'n'"
+        ],
+        "merged_token": "b'in'",
+        "merged_len": 2
+      }
+    ]
+  },
+  "holdout": {
+    "num_tokens": 6315,
+    "tokens_per_byte": 0.31188,
+    "compression_bytes_per_token": 3.2063,
+    "encode_seconds": 0.0031,
+    "roundtrip_ok": true,
+    "top15_learned_tokens_by_frequency": [
+      {
+        "id": 262,
+        "token": "b' the'",
+        "length_bytes": 4,
+        "count": 234
+      },
+      {
+        "id": 259,
+        "token": "b' a'",
+        "length_bytes": 2,
+        "count": 164
+      },
+      {
+        "id": 267,
+        "token": "b' and'",
+        "length_bytes": 4,
+        "count": 157
+      },
+      {
+        "id": 266,
+        "token": "b' to'",
+        "length_bytes": 3,
+        "count": 129
+      },
+      {
+        "id": 284,
+        "token": "b' was'",
+        "length_bytes": 4,
+        "count": 124
+      },
+      {
+        "id": 285,
+        "token": "b' The'",
+        "length_bytes": 4,
+        "count": 53
+      },
+      {
+        "id": 319,
+        "token": "b' in'",
+        "length_bytes": 3,
+        "count": 49
+      },
+      {
+        "id": 335,
+        "token": "b' day'",
+        "length_bytes": 4,
+        "count": 49
+      },
+      {
+        "id": 299,
+        "token": "b'ing'",
+        "length_bytes": 3,
+        "count": 48
+      },
+      {
+        "id": 352,
+        "token": "b' Tim'",
+        "length_bytes": 4,
+        "count": 46
+      },
+      {
+        "id": 310,
+        "token": "b' it'",
+        "length_bytes": 3,
+        "count": 42
+      },
+      {
+        "id": 269,
+        "token": "b' f'",
+        "length_bytes": 2,
+        "count": 41
+      },
+      {
+        "id": 328,
+        "token": "b' her'",
+        "length_bytes": 4,
+        "count": 39
+      },
+      {
+        "id": 264,
+        "token": "b'ed'",
+        "length_bytes": 2,
+        "count": 38
+      },
+      {
+        "id": 312,
+        "token": "b' \"'",
+        "length_bytes": 2,
+        "count": 37
+      }
+    ]
+  },
+  "throughput": {
+    "encode_cold": {
+      "bytes": 299896,
+      "seconds": 0.0253,
+      "bytes_per_second": 11835372
+    },
+    "encode_warm": {
+      "seconds": 0.0168,
+      "bytes_per_second": 17831052
+    },
+    "encode_iterable_cold": {
+      "bytes": 299896,
+      "seconds": 0.0271,
+      "bytes_per_second": 11060151,
+      "chunk_bytes": 65536,
+      "matches_encode": true
+    }
+  },
+  "naive_compare": {
+    "corpus_bytes": 30000,
+    "vocab_size": 1000,
+    "fast_seconds": 0.0313,
+    "naive_seconds": 0.4542,
+    "speedup": 14.51,
+    "same_merges": true,
+    "same_vocab": true
+  },
+  "peak_rss_mb_final": 56.4,
+  "total_seconds": 0.686,
+  "environment": {
+    "python": "3.14.3",
+    "platform": "macOS-27.2-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "cpu_count": 10
+  }
+}

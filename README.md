@@ -14,6 +14,9 @@
 | `minimal_llama.py` | 单文件精简 Llama |
 | `CS336_ROADMAP.md` | CS336 学习路线图 |
 | `CS336_A1_DETAILED_PLAN.md` | Assignment 1 详细计划 |
+| `BPE_TOKENIZER_TUTORIAL.md` | BPE 分词器教程：学习路线、从零实现、实验与“移植到已有模型” |
+| `bpe_lab/` | BPE 教学实现（含 20 个测试）、小语料训练 demo、GPT-2 换 tokenizer 的 BPB 实验 |
+| `docs/bpe/SOURCES.md` | BPE 教程的材料地图、精确规格、测试地图与勘误 |
 | `demo/docs/` | 演示页面的设计、审查与交接文档 |
 | `demo/GPT2-LLaMA-Atlas/` | GPT-2 / LLaMA 交互式图谱；单文件版：`atlas.html`、`llama-atlas.html`，浏览器直接打开即可 |
 
