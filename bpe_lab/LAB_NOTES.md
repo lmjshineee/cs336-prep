@@ -13,7 +13,7 @@
 | 文件 | 作用 |
 | --- | --- |
 | `bpe_lab/toy_bpe.py` | 教学版 byte-level BPE：训练（fast 增量 / naive 全量）、`BPETokenizer`（encode / encode_iterable / decode）、GPT-2 格式 `save`/`load` |
-| `bpe_lab/test_toy_bpe.py` | 20 个测试，双模式（`python 直接跑` / `pytest`）；含 handout 手算例子、A1 官方 reference 对照、transformers GPT-2 逐 token 对照 |
+| `bpe_lab/test_toy_bpe.py` | 23 个测试，双模式（`python 直接跑` / `pytest`）；含 handout 手算例子、A1 官方 reference 对照、transformers GPT-2 逐 token 对照 |
 | `bpe_lab/demo_train.py` | 在 TinyStories 前 ~300KB 上训练 vocab=1000，打印/保存耗时、内存、压缩比、吞吐 |
 | `bpe_lab/transplant_gpt2.py` | 核心实验：训练 4096 词表 BPE，替换 GPT-2 tokenizer，测三点 bits-per-byte + 初始化消融 |
 | `bpe_lab/results/toy_demo.json` | demo 的机器可读结果 |
@@ -24,9 +24,10 @@
 transformers 5.21.0，tokenizers 0.23.3，regex，numpy，matplotlib。
 **没有 pytest、没有 tiktoken**（pytest 通过 `uv run --with pytest` 临时环境跑）。
 
-> ⚠️ 热约束：用户反馈无风扇机器发烫，所以按 Lead 要求停止了所有 CPU 密集任务。
-> 因此 **`control_original_tokenizer`（同预算、原 tokenizer 的对照）没有跑**，
-> 也没有补跑 512 词表的独立消融（只有早先 `--quick` 冒烟数字）。这会影响结论口径，见 §5。
+> ⚠️ 热约束：用户多次反馈无风扇机器发烫。control 最终用 **1 线程 + 每 20 步 sleep 0.4s +
+> 每 200 步降温 60s** 跑完（总 636s）。它还暴露过一个经典 bug：训练 loss 忘了 shift
+> （正确是 `logits[:, :-1]` 对 `x[:, 1:]`），训练 loss 7.8 nats、BPB 0.956→2.94；
+> 修正后正常。详见 §5.5。
 
 ---
 
@@ -51,16 +52,16 @@ export UV_CACHE_DIR=$PWD/.tmp/uvcache \
 #       vocab_size: 269（256 字节 + 1 special + 12 merges）
 ```
 
-### 2.2 测试（双模式，20 个测试，~1.6–1.8s）
+### 2.2 测试（双模式，23 个测试，~2s）
 
 ```bash
 # 直接跑（不需要 pytest，失败会 exit 1）
 .venv/bin/python bpe_lab/test_toy_bpe.py
-# 输出：汇总: 20 passed, 0 failed, 0 skipped
+# 输出：汇总: 23 passed, 0 failed, 0 skipped
 
 # pytest（会新建临时环境，慢一点；因为本仓库没有 pyproject，不要 uv sync）
 uv run --with pytest python -m pytest bpe_lab/test_toy_bpe.py -q
-# 输出：20 passed in 1.58s
+# 输出：23 passed（含 3 个流式文件测试）
 ```
 
 覆盖点：12 条 merge 精确序列、6 merges 时 st/est/ow/low/west/ne 与 `newest → [ne, west]`、
@@ -174,6 +175,22 @@ tie-break（`(BA, A)`）、§2.6.1 `"the cat ate" → [9, 7, 1, 5, 10, 3]`、
 
 ---
 
+### 3.3 control：原 tokenizer、同预算继续训练（`results/control_original_tokenizer.json`）
+
+配置与 transplant 的 phase1+phase2 总步数一致：600 步全参、lr=1e-4、batch 4×128、同一训练数据/seed/eval。
+为了控制温度：1 线程、每 20 步 sleep 0.4s、每 200 步降温 60s。
+
+| 阶段 | full-eval BPB | 相对基线 |
+| --- | --- | --- |
+| GPT-2 基线（未继续训练） | **0.95581** | — |
+| control：原 tokenizer + 600 步 | **0.74710** | −21.8% |
+| transplant：换 4096 BPE + 600 步 | **0.78218** | −18.2% |
+| **换 tokenizer 的额外代价** | **+0.03508** | 相对 control +4.7% |
+
+说明：两者都远低于基线，说明 BPB 下降主要是 TinyStories 域适应；换 tokenizer 在同预算下只多付
+约 0.035 BPB，和“90.9% 词表重叠 + 压缩比基本持平”一致。总耗时 636s，峰值内存 3.75GB，训练末
+loss 近 20 步均值 1.44 nats。
+
 ## 4. 实现要点 & 踩坑记录（教程可以引用）
 
 ### 4.1 handout 语义（容易写错的四处）
@@ -251,6 +268,27 @@ GPT-2 的 bytes↔unicode 双射（空格 → `Ġ`）写 `vocab.json` / `merges.
 
 ---
 
+### 4.9 大文件流式预分词（`train_bpe_from_file`）
+
+toy 版的 `train_bpe(corpus: str)` 要求整段语料在内存里；A1 的 TinyStories（~2GB）/ OWT（~12GB）不能这么读。新增的流式路径：
+
+- `iter_file_chunks(path, special_tokens, chunk_bytes=8MB)`：只在「special token 起点 / 换行之后 / UTF-8 字符边界」切块；
+- 如果 `chunk_bytes` 的落点正好在某个 special token 内部，会把整块扩到该 token 之后，绝不切出 `<|endof` / `text|>`；
+- 到 EOF 时剩余部分整体作为最后一块（EOF 本身是安全边界）；
+- `count_pretokens_from_file` 对每块独立计数，再把 `Counter` 相加；合并阶段复用同一套 `_train_merges_fast`。
+
+验收（`test_toy_bpe.py` 新增 3 个测试）：
+
+| 测试 | 覆盖 |
+| --- | --- |
+| `test_file_streaming_matches_in_memory` | 3.8KB fixture，chunk=64/512/4096 时 merges 与整段读入完全一致 |
+| `test_file_streaming_special_and_blank_lines` | 含 `<|endoftext|>`、空行、缩进的语料，chunk=7/32/200；计数与 merges 都一致 |
+| `test_file_streaming_empty_file` | 空文件 → 只含 256 字节 + special |
+
+5MB fixture 实测（chunk=1MB）：与整段读入的 unique pre-token 数都是 **8,126**，计数 `Counter` 完全相等，两边各 **0.71s**（单进程，纯正则）。
+
+局限：**没有实现 multiprocessing**（A1 的性能题需要它）；单进程流式版只解决“不爆内存”，不解决“预分词慢”。handout 的 `find_chunk_boundaries` 是按 special token 数量切块，不是固定字节，二者可以结合。
+
 ## 5. 结果解读（重要，别过度解读）
 
 ### 5.1 为什么「换 tokenizer」只掉 0.064 BPB？
@@ -271,36 +309,48 @@ vocab=512 时是 2.43 vs 基线 0.98（不同 eval 子集，仅量级示意）�
 随机初始化的 embedding 和已训练好的 transformer 不匹配，前向立刻崩掉（初始 train loss 7.53 vs 3.04），
 50 步只能学回一部分；而均值初始化让新词表和旧模型的表示空间对齐，几乎不需要重新学。
 
-### 5.3 为什么「训练后 0.782 < baseline 0.956」不能直接说「换 tokenizer 有收益」？
+### 5.3 「训练后 0.782 < baseline 0.956」怎么解释？
 
-因为继续训练用的是 **TinyStories 训练文档**，而 eval 是同分布留出文档——这 600 步本身就带来了
-**域适应收益**。要拆开「域适应」和「换 tokenizer 的代价」，需要一个对照：
-**同一个 GPT-2、原 tokenizer、同样 600 步全参 lr=1e-4、同数据同 seed**，测同一 eval。
+这 600 步本身是 TinyStories 域适应，所以必须和 control 比。control（原 tokenizer、同样 600 步
+全参 lr=1e-4、同数据/seed/eval）的 BPB 是 **0.7471**：
 
-**这个 control 没有跑**（原因见 §1：用户要求立即停止 CPU 密集任务）。因此本目录的结论只到：
-
-- 换 tokenizer 的**瞬时代价**：BPB **0.9558 → 1.0195（+0.0637，+6.7%）**，与新 tokenizer 的
+- **瞬时代价**：换 tokenizer 后未训练 BPB **0.9558 → 1.0195（+0.0637，+6.7%）**，与新词表
   tokens/byte 只差 2.2% 一致；
-- 在新 tokenizer 上继续训练 600 步后 BPB 为 **0.7822**；
-- **不能**下结论说「移植后继续训练优于原 tokenizer」——需要上面那个 control 才能回答。
-
-补 control 的配方（如果之后允许跑）：约 40 行脚本——加载原 GPT-2（不 resize），用**原 tokenizer**
-把同一段 400KB 训练文档编码成 ids，batch 4×128、600 步全参、lr=1e-4、AdamW、clip 1.0、同 seed，
-在同一个完整 eval 上按同一 BPB 公式评估；预计 CPU ~4 分钟。
+- **同预算继续训练后**：transplant **0.7822** vs control **0.7471** → 换 tokenizer 的额外代价
+  **+0.0351 BPB（相对 control +4.7%）**；
+- 两者都低于基线 0.956，所以 BPB 的大幅下降主要来自域适应，**不是**换词表的收益；
+- 在“90.9% 词表重叠 + 压缩比基本持平”的条件下，移植成本很小；跨语言/低重叠词表不能外推。
 
 ### 5.4 图与表的口径
 
 `transplant_bpb.png` 只画**完整 eval 的三个点**（step 0 / 200 / 600）+ baseline 水平线 +
-初始化消融 inset；点之间是半透明虚线，表示「只是视觉引导，没有测中间点」。
+control 点划线（0.747）+ 初始化消融 inset；点之间是半透明虚线，表示「只是视觉引导，没有测中间点」。
 JSON 里仍保留每 100 步的 `training.curve`，但它是在 **8KB eval 切片**上测的（约 10 篇文档、~500 token），
 采样方差可达 0.08 BPB：例如 step600 的 slice BPB = 0.8675，而完整 eval = 0.7822（差 0.085）。
 所以教程正文**引用完整 eval 的数字**，不要用 slice 曲线和 full eval 混着说。
 
 ---
 
+### 5.5 control（原 tokenizer、同预算）：已完成
+
+| 尝试 | 结果 |
+| --- | --- |
+| 第一版：loss 忘了 shift（`logits` 与 `x` 未错位） | 训练 loss **7.8 nats**，BPB **0.956 → 2.94**；不是 LR 问题，是标签错位 |
+| 修正 shift 后：2 步 phase1（lr=1e-3，只训 embedding） | BPB **0.947**，正常 |
+| 正式：600 步全参 lr=1e-4（1 线程 + 降温） | **0.7471**，636s，completed |
+
+结论：同预算下换 tokenizer 的额外代价 **+0.035 BPB（相对 control +4.7%）**；0.782 < 0.956 主要是
+域适应，不是换词表的收益。这个量级说明在“高重叠 + 压缩比持平”的条件下，移植成本很小；换成
+跨语言词表时（重叠率低、压缩比差）会完全不同，不能外推。
+
+```bash
+.venv/bin/python bpe_lab/control_original_tokenizer.py --threads 1 \
+    --sleep-every 20 --sleep-seconds 0.4 --cooldown-every 200 --cooldown-seconds 60
+```
+
 ## 6. 局限
 
-1. **control 未跑**（见 §5.3）：不能回答「同预算下换 tokenizer 是收益还是损失」。
+1. **control 只覆盖** GPT-2 small + TinyStories + 0.3M token 这一种配置；不能外推到更大模型/更多步数/跨语言词表。
 2. **512 词表消融只有 quick 冒烟**，eval 子集与主实验不同，只能示意量级。
 3. 单机 CPU、单 seed（seed=0）、单模型（GPT-2 small）；换更大模型/更多步数，结论可能不同。
 4. 随机初始化消融用的是 `resize_token_embeddings` 默认初始化（normal, std=0.02），

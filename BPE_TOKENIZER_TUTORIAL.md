@@ -357,6 +357,21 @@ handout 的例子：`("A","B")`, `("A","C")`, `("B","ZZ")`, `("BA","A")` 同频�
 
 > 为什么是“更大”而不是“更小”？没有深层原因，纯粹是 handout 为了确定性选定的规则。不同实现（tiktoken、HF tokenizers）可能有自己的 tie-break；**跟测试对齐时以 handout 为准**。
 
+**用堆选 max 时，tie-break 会反过来咬你一口。** Python 的 `heapq` 是最小堆，常见写法是放 `(-count, pair)`；但两个 pair 频次相同时，堆会弹出 **字典序更小** 的那个，正好和 handout 相反。`bpe_lab/toy_bpe.py` 的解法是包一层 `_GreaterPair`，把比较反过来：
+
+```python
+class _GreaterPair:
+    __slots__ = ("pair",)
+    def __init__(self, pair):
+        self.pair = pair
+    def __lt__(self, other):
+        return self.pair > other.pair      # 字典序更大的 pair 在堆里“更小”
+
+heapq.heappush(heap, (-count, _GreaterPair(pair)))
+```
+
+这样堆顶永远是“频次最高、同频时字典序最大”的 pair。堆里允许有**过期条目**（pair 频次后来变了），弹出时用 `pair_counts[pair] == -neg_count` 校验，不匹配就丢弃——这就是“惰性删除”，省掉了在堆里查找并修改元素的 `O(N)` 开销。
+
 ### 3.5 special token：训练时是硬边界，编码时是整体
 
 special token（如 `<|endoftext|>`）有两个身份：
@@ -557,6 +572,15 @@ def train_bpe(corpus: str, vocab_size: int, special_tokens: list[str] | None = N
               *, pretokenizer=gpt2_pretokenize, naive=False, verbose=False
               ) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]: ...
 
+# 大文件：只按 special / 换行 / UTF-8 边界切块，不读整文件
+def iter_file_chunks(path, special_tokens=(), chunk_bytes=8 << 20) -> Iterator[str]: ...
+def count_pretokens_from_file(path, special_tokens=(), pretokenizer=gpt2_pretokenize,
+                              chunk_bytes=8 << 20) -> Counter[tuple[bytes, ...]]: ...
+def train_bpe_from_file(path, vocab_size, special_tokens=None, *,
+                        pretokenizer=gpt2_pretokenize, naive=False,
+                        chunk_bytes=8 << 20, verbose=False
+                        ) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]: ...
+
 class BPETokenizer:
     def __init__(self, vocab, merges, special_tokens=None, pretokenizer=gpt2_pretokenize): ...
     def encode(self, text: str) -> list[int]: ...
@@ -613,6 +637,16 @@ def count_pretokens(corpus: str, specials: list[str]) -> Counter:
 
 为什么按“片段”计数而不是按全文：同一个词 `" the"` 出现 10 万次，只需记录 `(b" ", b"t", b"h", b"e") -> 100000`，之后每轮用频次加权，不用重扫原文。这是 handout §2.4 说的“increment by 10 instead of looking through the corpus”。
 
+**大文件怎么办**：`train_bpe(corpus: str)` 要求整个语料在内存里；A1 的 TinyStories ~2GB、OWT ~12GB 不能这么干。本 lab 的 `train_bpe_from_file` 走流式：
+
+- `iter_file_chunks(path, special_tokens, chunk_bytes=8MB)`：只在“special token 起点 / 换行之后 / UTF-8 字符边界”切块，绝不从词或特殊 token 中间切；
+- `count_pretokens_from_file(...)`：对每块独立计数，再把 `Counter` 相加；
+- 合并阶段与单进程版完全相同，所以两者在**同一语料上必须产出完全一致的 merges**——`test_file_streaming_matches_in_memory` 用 64/512/4096 字节的块验证了这一点。
+
+5MB fixture 上实测：`chunk_bytes=1MB` 与整段读入的 unique pre-token 都是 8,126 个，`Counter` 完全相等，各 0.71s（单进程）。
+
+A1 还要再往前一步：用 `multiprocessing` 把块分给多核并行预分词（handout §2.5 的 `find_chunk_boundaries` 就是干这个的），合并阶段仍单进程。本 lab 先保留单进程正确版，多进程留作练习。
+
 ### 4.4 合并循环：增量更新的核心
 
 核心不变量：`stats` 必须等于“所有片段按当前 token 序列重新数一遍”的结果。每次合并 `(a,b) → c`，只有三类 pair 会变：
@@ -646,7 +680,11 @@ def apply_merge(pretokens, stats, index, pair, new_id):
             index[p].add(new_key)
 ```
 
-> 真实实现里“先全删再加”会把成本放大 3–4 倍；更好的做法是只修变化的那几个 pair（`(a,b)` 以及合并点两侧的 pair），并维护每个片段的 token 序列缓存。`bpe_lab/toy_bpe.py` 用的是“只碰受影响片段 + 只改变化 pair”的版本，代码里有注释对照。
+> **这段代码还不是最优的。** 它把旧片段的所有 pair 都减一遍、再把新片段的所有 pair 都加一遍，但片段里绝大多数 pair 在合并前后并没有变（只有合并点两侧会变）。真正的增量版需要定位合并发生的位置，只更新 `(x, c)`、`(c, y)` 和被删掉的 `(a, b)`，前缀/后缀的 pair 完全不动；实现更麻烦，但能把每轮成本再降 2–3 倍。
+>
+> `bpe_lab/toy_bpe.py` 停在“只碰受影响片段 + 整词删/加”这一步：在 TinyStories 4.2MB / 4096 词表上已经只要 0.9 秒；到 OWT 32k 词表时，才值得做更细的增量。
+>
+> **GC/内存成本**：每次合并都会新建 tuple，Python 的对象分配与回收在几十万次 merge、几十万 unique 片段时会变成可观开销。继续优化有两条路：把片段表示成 `list` 并原地 splice（减少分配），或把热路径挪到 C/Rust（handout 标注为可选）；调优前先用 `tracemalloc` / `gc.get_stats()` 确认内存与 GC 真的是瓶颈。
 
 另外两个细节：
 
@@ -660,18 +698,25 @@ class BPETokenizer:
     def __init__(self, vocab, merges, special_tokens=None):
         self.vocab = dict(vocab)
         self.ranks = {pair: i for i, pair in enumerate(merges)}
-        self.merge_to_id = {pair: 256 + len(special_tokens or []) + i
-                            for i, pair in enumerate(merges)}  # 注意 ID 布局
+        # 关键：从 vocab 反查每个 token 的 ID，不要用“256 + specials + i”推算
+        self.byte_to_id = {}
+        for tid in sorted(self.vocab):
+            self.byte_to_id.setdefault(self.vocab[tid], tid)
+        self.merge_to_id = {
+            pair: self.byte_to_id[pair[0] + pair[1]] for pair in merges
+        }
         self.special_to_id = {}
         for s in special_tokens or []:
             b = s.encode("utf-8")
-            if b not in self.vocab.values():
-                self.vocab[len(self.vocab)] = b
-            self.special_to_id[s] = next(i for i, v in self.vocab.items() if v == b)
+            if b not in self.byte_to_id:
+                new_id = max(self.vocab) + 1
+                self.vocab[new_id] = b
+                self.byte_to_id[b] = new_id
+            self.special_to_id[s] = self.byte_to_id[b]
         self.cache = {}
 ```
 
-`self.merge_to_id` 的公式依赖“词表布局”：256 字节 + specials 在前，merge 产物从 `256 + len(specials)` 开始。**如果你的词表是从文件加载的，不要用这个公式，直接从 `vocab` 反查**（这是从零实现和 `from_files` 最容易对不上的地方）。
+> **常见 bug（来自 review）**：从零训练时，ID 布局确实是“256 字节 → specials → merge 产物”，所以有人写成 `256 + len(specials) + i`。但只要词表来自 `from_files`（例如官方测试的 `gpt2_vocab.json`），ID 就不保证这个顺序（GPT-2 的 special 在 50256，merge 产物编号也不连续）。**唯一可靠的做法是 `byte_to_id[token_bytes]` 反查**。`bpe_lab/toy_bpe.py` 的 `_token_to_id` 就是这个表。
 
 ```python
 def encode(self, text: str) -> list[int]:
@@ -1188,11 +1233,12 @@ def bits_per_byte(model, id_batches, n_bytes):
 - 新 tokenizer：vocab **4096**（3839 merges），special `<|endoftext|>`，训练耗时 0.91 s；
 - 旧模型：GPT-2 small（124M，tied embeddings，vocab 50257），权重来自 `real_llm_lab/weights/gpt2`；
 - 初始化：按 §7.3.1 的“旧子词均值”；
-- 继续训练：先只训 embedding/LM head 200 步，再全参 400 步（CPU 8 线程，总计约 5 分钟，峰值内存 3.3 GB）。
+- 继续训练：先只训 embedding/LM head 200 步，再全参 400 步（CPU 8 线程，总计约 5 分钟，峰值内存 3.3 GB）；
+- 对照（control）：原 tokenizer、同样的 600 步全参 lr=1e-4、同数据/seed/eval（1 线程 + 每 200 步主动降温 60s，总耗时 636s，峰值 3.75 GB）。
 
 > 会把 CPU 打满、机器明显发热。无风扇笔记本建议 `--threads 2`，或先用 `--quick` 跑通流程；这个实验不是必须一次跑完。
 
-结果（数字来自实际运行，详见 `bpe_lab/results/transplant.json`）：
+结果（数字来自实际运行；transplant 见 `bpe_lab/results/transplant.json`，control 见 `bpe_lab/results/control_original_tokenizer.json`）：
 
 | 阶段 | full-eval BPB | 相对基线 | 备注 |
 | --- | --- | --- | --- |
@@ -1200,16 +1246,19 @@ def bits_per_byte(model, id_batches, n_bytes):
 | 换 4096 BPE，未训练 | 1.0195 | **+6.7%** | 3.99 bytes/token；90.9% 的新 token 与旧 token 字节完全相同 |
 | + 200 步（只训 embedding/LM head） | 0.9235 | −3.4% | 学习率 1e-3 |
 | + 400 步（全参） | **0.7822** | −18.2% | 学习率 1e-4；累计约 0.3M token |
+| **原 tokenizer，同预算 600 步（control）** | **0.7471** | −21.8% | 学习率 1e-4；1 线程、含降温 |
 
 ![GPT-2 换 tokenizer 后的 BPB 曲线：虚线是原 tokenizer 基线，蓝线是训练过程](bpe_lab/results/transplant_bpb.png)
 
-> 图由 `bpe_lab/transplant_gpt2.py` 生成（`bpe_lab/results/transplant_bpb.png`）。纵轴是 bits-per-byte，越低越好。图里只测了 3 个 full-eval 检查点（0 / 200 / 600 步），点之间的虚线只是视觉引导，不是逐步测量；左下角 inset 是 50 步的初始化对照。
+> 图由 `bpe_lab/transplant_gpt2.py` 生成（`bpe_lab/results/transplant_bpb.png`）。纵轴是 bits-per-byte，越低越好。换 tokenizer 的曲线只测了 3 个 full-eval 检查点（0 / 200 / 600 步），点之间的虚线只是视觉引导；绿色虚线是原基线，棕色点划线是 control（原 tokenizer 同预算 600 步，0.747），左下角 inset 是 50 步初始化对照。
 
 **怎么读这组数**（比“掉了多少点”更重要的是归因）：
 
 1. **未训练只掉 6.7%**，这与“换 tokenizer 一定崩”的直觉相反。原因有二：新词表压缩比几乎持平（3.99 vs 4.08 bytes/token），且 **90.9% 的新 token 与 GPT-2 旧 token 字节完全相同**（3,724 / 4,095 个非 special token；多字节 token 里 90.3% 能精确命中）。这意味着大部分行只是**换了 ID 编号**，真正“新造”的 embedding 很少。
 2. **初始化方式决定早期收敛**：额外做的 50 步对照里，均值初始化 BPB **1.004**，随机初始化 **2.177**——差 1.17 BPB。均值初始化让新 token 一开始就落在旧语义空间的合理位置（子词组合的“平均意思”），随机初始化则要先把这些行“学会”。
-3. **最终 0.782 < 基线 0.956，但不能归因于“换 tokenizer 有收益”**。继续训练 600 步本身是在 TinyStories 上做域适应；缺少“原 tokenizer 同预算继续训练”的对照，就不能把提升归给新词表。诚实的结论是：**在这个设置下，换 tokenizer + 有限继续训练没有造成灾难性损失**。
+3. **有了 control，结论才完整**：原 tokenizer 同样继续训练 600 步，BPB 降到 **0.7471**；换 tokenizer 后是 **0.7822**，所以**同预算下换 tokenizer 的额外代价 ≈ +0.035 BPB（相对 control 约 +4.7%）**。两个数字都远低于基线 0.956——说明“0.782 < 0.956”主要是 TinyStories 域适应，不是换词表的功劳。+0.035 BPB 在 0.3M token 的预算下已经很小，继续训练有望抹平；这与“90.9% 词表重叠 + 压缩比基本持平”的预期一致。
+
+   > 补 control 时踩了一个经典 bug，值得单独记：第一版 loss 写成 `cross_entropy(logits.reshape(...), x.reshape(...))`——**忘了 shift**。正确写法是 `logits[:, :-1]` 对 `x[:, 1:]`；不 shift 等于让模型“预测当前 token”，训练 loss 高达 **7.8 nats**，几步就把 BPB 从 0.956 推到 **2.94**。修正后 2 步冒烟是 **0.947**，正常。**写 LM 训练循环时先检查 shift，这是最便宜的 sanity check。**
 4. **词表太小的代价是一阶的**：把词表缩到 512 的冒烟配置（不同 eval 子集，仅作量级参考）里，未训练 BPB 从 1.02 升到 **2.43**（+147%），因为 tokens/byte 从 0.248 涨到 0.416（序列长了 68%）。**压缩比差多少，往往比“词表重叠率”更能预测掉点。**
 
 所以“换词表能不能行”更准确的结论是一个三元函数：
@@ -1224,7 +1273,7 @@ def bits_per_byte(model, id_batches, n_bytes):
 
 这也解释了为什么“给 Llama 加中文词表”比“把英文 BPE 换成另一个英文 BPE”贵得多。
 
-> **实验边界**：单 seed、单模型（124M）、CPU、约 0.3M token 继续训练、TinyStories 单域；数字用于说明方法与量级，不是“换 tokenizer 的通用结论”。
+> **实验边界**：单 seed、单模型（124M）、CPU、约 0.3M token 继续训练、TinyStories 单域；control 也只覆盖这一种配置。数字用于说明方法与量级，不是“换 tokenizer 的通用结论”。
 
 #### 7.3.6 什么时候不值得
 

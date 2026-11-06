@@ -321,6 +321,22 @@ def _plot_bpb(result: dict, png_path: Path) -> None:
         baseline, linestyle="--", color="#2ca02c", linewidth=1.6,
         label=f"GPT-2 baseline with the OLD tokenizer ({baseline:.3f} BPB)",
     )
+
+    # 如果存在 control（原 tokenizer、同预算继续训练），画一条点划线
+    control_bpb = None
+    control_path = RESULTS_DIR / "control_original_tokenizer.json"
+    if control_path.exists():
+        try:
+            control = json.loads(control_path.read_text(encoding="utf-8"))
+            control_bpb = (control.get("bpb") or {}).get("after_training", {}).get("bpb")
+        except Exception:  # noqa: BLE001 - 画图不该因为可选文件失败
+            control_bpb = None
+    if control_bpb is not None:
+        steps = steps_phase1 + steps_phase2
+        ax.axhline(
+            control_bpb, linestyle="-.", color="#8c564b", linewidth=1.4,
+            label=f"control: OLD tokenizer, same {steps} steps ({control_bpb:.3f} BPB)",
+        )
     ax.axvline(
         steps_phase1, linestyle=":", color="gray",
         label="phase 1 (embedding only) -> phase 2 (all params)",
@@ -332,7 +348,8 @@ def _plot_bpb(result: dict, png_path: Path) -> None:
         "only 3 full-eval checkpoints measured; dashed line is a linear guide",
         fontsize=10.5,
     )
-    ax.set_ylim(min(p[1] for p in points) - 0.06, max(baseline, max(p[1] for p in points)) + 0.06)
+    y_values = [p[1] for p in points] + [baseline] + ([control_bpb] if control_bpb is not None else [])
+    ax.set_ylim(min(y_values) - 0.06, max(y_values) + 0.06)
     ax.grid(alpha=0.3)
     ax.legend(fontsize=8, loc="upper right")
 

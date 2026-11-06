@@ -236,14 +236,21 @@
     "threads": 8
   },
   "control_original_tokenizer": {
-    "status": "not_run",
-    "reason": "按用户要求立即停止 CPU 密集任务（无风扇机器发烫）；未执行「原 tokenizer 同预算继续训练」对照。因此本 JSON 的结论只用原始 BPB 差值表述，不把 0.782 解释为「换 tokenizer 的收益」。",
-    "planned_config": {
-      "model": "same GPT-2 (original 50257 vocab, no resize)",
+    "status": "completed",
+    "result_file": "bpe_lab/results/control_original_tokenizer.json",
+    "config": {
+      "model": "same GPT-2, original 50257 vocab, no resize",
       "training": "600 steps full-parameter, batch 4x128, lr 1e-4, AdamW, clip 1.0",
-      "data": "same new-tokenizer ids? NO -> original tokenizer ids, same 400KB source text",
-      "eval": "same held-out split, same window 256 / batch 4, same BPB formula"
-    }
+      "data": "original tokenizer ids, same 400KB source text",
+      "eval": "same held-out split, window 256 / batch 4, same BPB formula",
+      "heat_control": "1 thread, sleep 0.4s every 20 steps, 60s cooldown every 200 steps"
+    },
+    "baseline_bpb": 0.95581,
+    "after_training_bpb": 0.7471,
+    "swap_extra_cost_bpb": 0.03508,
+    "swap_relative_to_control_pct": 4.7,
+    "total_seconds": 636.2,
+    "note": "同预算下换 tokenizer 的额外代价 +0.0351 BPB（相对 control +4.7%）；0.782<0.956 主要是域适应，不是换词表的收益。"
   },
   "vocab512_untrained_reference": {
     "status": "reference_only_different_config",

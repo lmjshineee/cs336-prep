@@ -33,8 +33,12 @@ import toy_bpe  # noqa: E402
 from toy_bpe import (  # noqa: E402
     BPETokenizer,
     _pick_best_pair,
+    count_pretokens,
+    count_pretokens_from_file,
     gpt2_pretokenize,
+    iter_file_chunks,
     train_bpe,
+    train_bpe_from_file,
     whitespace_pretokenize,
 )
 
@@ -558,6 +562,61 @@ def test_gpt2_tokenizer_matches_transformers():
     ]
     for text in texts:
         assert tok.encode(text) == ref.encode(text), f"tokenize 不一致: {text!r}"
+
+
+# ---------------------------------------------------------------------------
+# 大文件流式路径：分块统计必须与整段读入得到完全相同的 merges
+# ---------------------------------------------------------------------------
+def test_file_streaming_matches_in_memory():
+    path = FIXTURES / "tinystories_sample.txt"
+    if not path.exists():
+        _skip(f"找不到 fixture: {path}")
+    text = path.read_text(encoding="utf-8")
+    specials = ["<|endoftext|>"]
+    vocab_mem, merges_mem = train_bpe(text, 330, specials)
+    for chunk_bytes in (64, 512, 4096):
+        vocab_file, merges_file = train_bpe_from_file(
+            path, 330, specials, chunk_bytes=chunk_bytes
+        )
+        assert merges_file == merges_mem, f"chunk_bytes={chunk_bytes} 时 merges 不一致"
+        assert set(vocab_file.values()) == set(vocab_mem.values())
+
+
+def test_file_streaming_special_and_blank_lines():
+    docs = [
+        "Once upon a time.",
+        "\n\n",
+        "The cat sat.\n",
+        "  indented line  ",
+        "end",
+    ]
+    corpus = "<|endoftext|>".join(docs) * 5
+    specials = ["<|endoftext|>"]
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "corpus.txt"
+        path.write_text(corpus, encoding="utf-8")
+        for chunk_bytes in (7, 32, 200):
+            chunks = list(iter_file_chunks(path, specials, chunk_bytes=chunk_bytes))
+            assert "".join(chunks) == corpus, f"chunk_bytes={chunk_bytes} 丢字符"
+
+            c_file = count_pretokens_from_file(path, specials, chunk_bytes=chunk_bytes)
+            c_text = count_pretokens(corpus, specials)
+            assert c_file == c_text, f"chunk_bytes={chunk_bytes} 时 pre-token 计数不一致"
+
+            _, merges_file = train_bpe_from_file(
+                path, 300, specials, chunk_bytes=chunk_bytes
+            )
+            _, merges_text = train_bpe(corpus, 300, specials)
+            assert merges_file == merges_text, f"chunk_bytes={chunk_bytes} 时 merges 不一致"
+
+
+def test_file_streaming_empty_file():
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "empty.txt"
+        path.write_text("", encoding="utf-8")
+        vocab, merges = train_bpe_from_file(path, 260, ["<|endoftext|>"])
+        assert merges == []
+        assert len(vocab) == 257  # 256 字节 + 1 special
 
 
 # ---------------------------------------------------------------------------

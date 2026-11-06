@@ -401,25 +401,203 @@ def train_bpe(
             f"[train_bpe] {len(merges)} 次 merge，总耗时 {time.time() - t0:.2f}s"
             f"（{'naive' if naive else 'fast'} 实现）"
         )
+    return _assemble_vocab(specials, merges), merges
 
-    # 组装词表：256 单字节 → specials → merge 产物
+
+# ---------------------------------------------------------------------------
+# 3b. 大文件路径：按 special token 边界流式切块，不把整个文件读进内存
+# ---------------------------------------------------------------------------
+
+DEFAULT_FILE_CHUNK_BYTES = 8 << 20
+
+
+def _assemble_vocab(
+    specials: Sequence[str], merges: Sequence[tuple[bytes, bytes]]
+) -> dict[int, bytes]:
+    """按「256 单字节 → specials → merge 产物」的顺序组装词表。"""
     vocab: dict[int, bytes] = {i: bytes([i]) for i in range(256)}
     for token in specials:
         vocab[len(vocab)] = token.encode("utf-8")
     for a, b in merges:
         vocab[len(vocab)] = a + b
-    return vocab, merges
+    return vocab
+
+
+def _num_merges_or_raise(vocab_size: int, specials: Sequence[str]) -> int:
+    num_merges = vocab_size - 256 - len(specials)
+    if num_merges < 0:
+        raise ValueError(
+            f"vocab_size={vocab_size} 小于 256+len(special_tokens)={256 + len(specials)}，"
+            "没有空间做任何 merge"
+        )
+    return num_merges
+
+
+def _utf8_forward_safe(f, pos: int, size: int) -> int:
+    """把从 pos 开始的位置向前挪到 UTF-8 字符边界（最多 3 字节）。"""
+    f.seek(pos)
+    while pos < size:
+        b = f.read(1)
+        if not b or (b[0] & 0xC0) != 0x80:  # 非续字节（或 EOF）就是边界
+            return pos
+        pos += 1
+    return pos
+
+
+def _find_chunk_end(
+    f, start: int, size: int, target: int, needles: Sequence[bytes]
+) -> int:
+    """从 target 向后找「最近的安全切点」：special token 起点或换行之后。
+
+    为什么只认这两类切点：
+      * special token 是训练时的硬边界，切在它前面绝对安全；
+      * 换行属于空白 run，GPT-2 正则的空白/词边界语义在换行处可独立匹配，
+        切在换行之后不会改变任何 pre-token 的切分。
+    不能切在「空格之后」：`"abc def"` 里的空格属于后一个 pre-token `" def"`，
+    切开会把 `" def"` 变成 `" "` + `"def"`，计数和 merges 都会变。
+    """
+    max_scan = 8 << 20
+    pos = target
+    buf = b""
+    f.seek(pos)  # 调用方可能刚做过别的 seek，这里必须回到 target
+    while pos < size and pos < target + max_scan:
+        block = f.read(min(1 << 20, size - pos))
+        if not block:
+            break
+        data = buf + block
+        base = pos - len(buf)
+        best = None
+        for needle in needles:
+            i = data.find(needle)
+            if i != -1:
+                cand = base + i
+                if best is None or cand < best:
+                    best = cand
+        nl = data.find(b"\n")
+        if nl != -1:
+            cand = base + nl + 1  # 切在换行之后
+            if best is None or cand < best:
+                best = cand
+        if best is not None and best > start:
+            return best
+        keep = max((len(n) for n in needles), default=1) - 1
+        buf = data[-keep:] if keep > 0 else b""
+        pos += len(block)
+
+    if pos >= size:
+        # 已到文件末尾：剩下的文本整体作为最后一块。EOF 本身就是安全边界，
+        # 不存在“后面的字符还会改变这块的预分词”的问题。
+        return size
+
+    # 没有 special/换行（超大单行）：退到 UTF-8 字符边界，并承认可能改变切分
+    end = _utf8_forward_safe(f, target, size)
+    return end if end > start else min(target, size)
+
+
+def _special_span_containing(
+    f, start: int, target: int, needles: Sequence[bytes]
+) -> tuple[int, int] | None:
+    """如果 target 落在某个 special token 内部，返回该 token 的 [begin, end)。
+
+    否则返回 None。chunk 边界绝不能切在 special token 中间，否则会把
+    `<|endoftext|>` 拆成 `<|endof` / `text|>`，计数和 merges 都会被污染。
+    """
+    max_len = max((len(n) for n in needles), default=0)
+    for needle in needles:
+        for off in range(max_len):
+            begin = target - off
+            if begin < start or begin < 0:
+                break
+            f.seek(begin)
+            if f.read(len(needle)) == needle:
+                if begin <= target < begin + len(needle):
+                    return begin, begin + len(needle)
+                break
+    return None
+
+
+def iter_file_chunks(
+    input_path: str | os.PathLike[str],
+    special_tokens: Sequence[str] = (),
+    chunk_bytes: int = DEFAULT_FILE_CHUNK_BYTES,
+) -> Iterator[str]:
+    """按「特殊 token 边界 / 行边界」把文件切成文本块，内存只占一个 chunk。
+
+    这是 A1 大文件（TinyStories ~2GB、OWT ~12GB）与 toy 版本的关键差别：
+    `train_bpe_from_file` 绝不能 `Path.read_text()` 把 12GB 读进内存。
+    """
+    path = Path(input_path)
+    size = path.stat().st_size
+    if size == 0:
+        return
+    needles = [
+        s.encode("utf-8")
+        for s in sorted(set(special_tokens), key=len, reverse=True)
+        if s
+    ]
+    with path.open("rb") as f:
+        start = 0
+        while start < size:
+            target = min(start + chunk_bytes, size)
+            if target >= size:
+                end = size
+            else:
+                span = _special_span_containing(f, start, target, needles)
+                end = span[1] if span is not None else _find_chunk_end(f, start, size, target, needles)
+            f.seek(start)
+            raw = f.read(end - start)
+            yield raw.decode("utf-8")
+            start = end
+
+
+def count_pretokens_from_file(
+    input_path: str | os.PathLike[str],
+    special_tokens: Sequence[str] = (),
+    pretokenizer: Callable[[str], Iterable[str]] = gpt2_pretokenize,
+    chunk_bytes: int = DEFAULT_FILE_CHUNK_BYTES,
+) -> Counter[tuple[bytes, ...]]:
+    """流式版 `count_pretokens`：分块统计后把局部 Counter 相加。
+
+    分块边界都在 special / 空白 / UTF-8 字符边界上，所以结果与整段读入一致
+    （`test_file_streaming_matches_in_memory` 会逐条比对 merges）。
+    """
+    counts: Counter[tuple[bytes, ...]] = Counter()
+    for chunk in iter_file_chunks(input_path, special_tokens, chunk_bytes):
+        counts.update(count_pretokens(chunk, special_tokens, pretokenizer))
+    return counts
 
 
 def train_bpe_from_file(
     input_path: str | os.PathLike[str],
     vocab_size: int,
     special_tokens: Sequence[str] | None = None,
-    **kwargs,
+    *,
+    pretokenizer: Callable[[str], Iterable[str]] = gpt2_pretokenize,
+    naive: bool = False,
+    chunk_bytes: int = DEFAULT_FILE_CHUNK_BYTES,
+    verbose: bool = False,
 ) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
-    """`train_bpe` 的文件版便捷包装：读 UTF-8 文本后调用 `train_bpe`。"""
-    text = Path(input_path).read_text(encoding="utf-8")
-    return train_bpe(text, vocab_size, special_tokens, **kwargs)
+    """文件版训练入口：流式预分词，不把整个文件读进内存。
+
+    与 `train_bpe` 的唯一区别是「怎么数 pre-token」；合并阶段完全相同，
+    所以两者在同一语料上必须产出完全一致的 merges（测试会验证）。
+    """
+    specials = list(dict.fromkeys(special_tokens or []))
+    num_merges = _num_merges_or_raise(vocab_size, specials)
+    t0 = time.time()
+    word_counts = count_pretokens_from_file(
+        input_path, specials, pretokenizer, chunk_bytes
+    )
+    if verbose:
+        print(
+            f"[train_bpe_from_file] 流式预分词完成：unique pre-token {len(word_counts):,} 个，"
+            f"chunk_bytes={chunk_bytes:,}，耗时 {time.time() - t0:.2f}s"
+        )
+    trainer = _train_merges_naive if naive else _train_merges_fast
+    merges = trainer(word_counts, num_merges)
+    if verbose:
+        print(f"[train_bpe_from_file] {len(merges)} 次 merge，总耗时 {time.time() - t0:.2f}s")
+    return _assemble_vocab(specials, merges), merges
 
 
 # ---------------------------------------------------------------------------
