@@ -31,6 +31,10 @@ demo/GPT2-LLaMA-Atlas/index.html
 demo/GPT2-LLaMA-Atlas/llama.html
 demo/DeepSeek-V4.1-Flash/
 
+# ---- training_lab 生成产物（可由 prep_data.py / train_demo.py 重建）----
+training_lab/data/
+training_lab/checkpoints/
+
 # ---- 压缩包与二进制文档 ----
 *.tar.gz
 *.zip

@@ -1,0 +1,650 @@
+{
+  "config": {
+    "steps": 600,
+    "start_iteration": 0,
+    "batch_size": 16,
+    "context_length": 64,
+    "d_model": 128,
+    "num_layers": 2,
+    "num_heads": 4,
+    "d_ff": 512,
+    "lr": 0.003,
+    "min_lr": 0.0001,
+    "warmup": 20,
+    "weight_decay": 0.01,
+    "grad_clip": 1.0,
+    "max_seconds": 90.0,
+    "eval_every": 100,
+    "log_every": 10,
+    "checkpoint_every": 200,
+    "checkpoint_dir": "/Users/yunni/Projects/cs336-prep-code/training_lab/checkpoints",
+    "resume": null,
+    "sample_tokens": 48,
+    "temperature": 0.8,
+    "top_p": 0.95,
+    "seed": 0,
+    "vocab_size": 2048,
+    "tie_weights": false
+  },
+  "curve": [
+    {
+      "step": 0,
+      "train_loss": 7.666342258453369,
+      "val_loss": 7.645756721496582,
+      "lr": 0.0,
+      "grad_norm": 0.0,
+      "tokens_per_s": 0.0
+    },
+    {
+      "step": 10,
+      "train_loss": 7.271831512451172,
+      "val_loss": null,
+      "lr": 0.00135,
+      "grad_norm": 0.7592782826069899,
+      "tokens_per_s": 23422.2
+    },
+    {
+      "step": 20,
+      "train_loss": 5.887620449066162,
+      "val_loss": null,
+      "lr": 0.00285,
+      "grad_norm": 0.6793771291610265,
+      "tokens_per_s": 29243.4
+    },
+    {
+      "step": 30,
+      "train_loss": 5.208105087280273,
+      "val_loss": null,
+      "lr": 0.002998277414546768,
+      "grad_norm": 0.5754175075295049,
+      "tokens_per_s": 33024.8
+    },
+    {
+      "step": 40,
+      "train_loss": 4.892760276794434,
+      "val_loss": null,
+      "lr": 0.0029923280525488627,
+      "grad_norm": 0.5020896395686961,
+      "tokens_per_s": 35764.3
+    },
+    {
+      "step": 50,
+      "train_loss": 4.779952049255371,
+      "val_loss": null,
+      "lr": 0.00298214809386295,
+      "grad_norm": 0.5161222970067018,
+      "tokens_per_s": 37937.3
+    },
+    {
+      "step": 60,
+      "train_loss": 4.238385200500488,
+      "val_loss": null,
+      "lr": 0.0029677673980618396,
+      "grad_norm": 0.5326756570380144,
+      "tokens_per_s": 39134.6
+    },
+    {
+      "step": 70,
+      "train_loss": 4.1320109367370605,
+      "val_loss": null,
+      "lr": 0.0029492281462040774,
+      "grad_norm": 0.5295304104120883,
+      "tokens_per_s": 38614.6
+    },
+    {
+      "step": 80,
+      "train_loss": 4.240152359008789,
+      "val_loss": null,
+      "lr": 0.002926584717109635,
+      "grad_norm": 0.5554330917262128,
+      "tokens_per_s": 39612.1
+    },
+    {
+      "step": 90,
+      "train_loss": 3.792987823486328,
+      "val_loss": null,
+      "lr": 0.002899903527857457,
+      "grad_norm": 0.5391002371030674,
+      "tokens_per_s": 40504.7
+    },
+    {
+      "step": 100,
+      "train_loss": 4.1629414558410645,
+      "val_loss": 3.918149948120117,
+      "lr": 0.00286926283897273,
+      "grad_norm": 0.5763959672666816,
+      "tokens_per_s": 41341.3
+    },
+    {
+      "step": 110,
+      "train_loss": 3.8171658515930176,
+      "val_loss": null,
+      "lr": 0.0028347525248752737,
+      "grad_norm": 0.5540157602079451,
+      "tokens_per_s": 42169.6
+    },
+    {
+      "step": 120,
+      "train_loss": 3.903618812561035,
+      "val_loss": null,
+      "lr": 0.002796473810262386,
+      "grad_norm": 0.612139979089093,
+      "tokens_per_s": 42567.5
+    },
+    {
+      "step": 130,
+      "train_loss": 3.648270606994629,
+      "val_loss": null,
+      "lr": 0.002754538973199363,
+      "grad_norm": 0.5650084768530802,
+      "tokens_per_s": 43142.5
+    },
+    {
+      "step": 140,
+      "train_loss": 3.5326614379882812,
+      "val_loss": null,
+      "lr": 0.0027090710157885887,
+      "grad_norm": 0.5693701139792751,
+      "tokens_per_s": 43710.8
+    },
+    {
+      "step": 150,
+      "train_loss": 3.653358221054077,
+      "val_loss": null,
+      "lr": 0.002660203303383176,
+      "grad_norm": 0.5921564585787371,
+      "tokens_per_s": 44108.8
+    },
+    {
+      "step": 160,
+      "train_loss": 3.737365484237671,
+      "val_loss": null,
+      "lr": 0.0026080791734034063,
+      "grad_norm": 0.5762037063215697,
+      "tokens_per_s": 44124.6
+    },
+    {
+      "step": 170,
+      "train_loss": 3.6744608879089355,
+      "val_loss": null,
+      "lr": 0.002552851514903381,
+      "grad_norm": 0.6582784307417485,
+      "tokens_per_s": 44407.7
+    },
+    {
+      "step": 180,
+      "train_loss": 3.4651706218719482,
+      "val_loss": null,
+      "lr": 0.0024946823201210827,
+      "grad_norm": 0.6140976809722947,
+      "tokens_per_s": 44602.4
+    },
+    {
+      "step": 190,
+      "train_loss": 3.524991035461426,
+      "val_loss": null,
+      "lr": 0.0024337422093272288,
+      "grad_norm": 0.5992150308140078,
+      "tokens_per_s": 44781.8
+    },
+    {
+      "step": 200,
+      "train_loss": 3.3348164558410645,
+      "val_loss": 3.5275216102600098,
+      "lr": 0.0023702099303666217,
+      "grad_norm": 0.6054217055804724,
+      "tokens_per_s": 44932.5
+    },
+    {
+      "step": 210,
+      "train_loss": 3.4685540199279785,
+      "val_loss": null,
+      "lr": 0.0023042718343599215,
+      "grad_norm": 0.632559369690495,
+      "tokens_per_s": 45120.4
+    },
+    {
+      "step": 220,
+      "train_loss": 3.3092823028564453,
+      "val_loss": null,
+      "lr": 0.0022361213291037024,
+      "grad_norm": 0.6187675978025551,
+      "tokens_per_s": 45380.3
+    },
+    {
+      "step": 230,
+      "train_loss": 3.166186809539795,
+      "val_loss": null,
+      "lr": 0.00216595831177206,
+      "grad_norm": 0.5993988501966562,
+      "tokens_per_s": 45571.9
+    },
+    {
+      "step": 240,
+      "train_loss": 3.5653839111328125,
+      "val_loss": null,
+      "lr": 0.0020939885825837566,
+      "grad_norm": 0.6132260227181049,
+      "tokens_per_s": 45800.8
+    },
+    {
+      "step": 250,
+      "train_loss": 3.4764840602874756,
+      "val_loss": null,
+      "lr": 0.0020204232411547255,
+      "grad_norm": 0.6346864298014397,
+      "tokens_per_s": 45927.4
+    },
+    {
+      "step": 260,
+      "train_loss": 3.196061372756958,
+      "val_loss": null,
+      "lr": 0.0019454780673065204,
+      "grad_norm": 0.6236806151721299,
+      "tokens_per_s": 46081.8
+    },
+    {
+      "step": 270,
+      "train_loss": 3.3151893615722656,
+      "val_loss": null,
+      "lr": 0.0018693728881469228,
+      "grad_norm": 0.6301097848885716,
+      "tokens_per_s": 46244.2
+    },
+    {
+      "step": 280,
+      "train_loss": 3.1641054153442383,
+      "val_loss": null,
+      "lr": 0.00179233093327916,
+      "grad_norm": 0.6546480298198033,
+      "tokens_per_s": 46400.2
+    },
+    {
+      "step": 290,
+      "train_loss": 2.990633010864258,
+      "val_loss": null,
+      "lr": 0.0017145781800310144,
+      "grad_norm": 0.6491660601098234,
+      "tokens_per_s": 46356.0
+    },
+    {
+      "step": 300,
+      "train_loss": 2.9850680828094482,
+      "val_loss": 3.2756989002227783,
+      "lr": 0.0016363426906243867,
+      "grad_norm": 0.621541010739554,
+      "tokens_per_s": 46437.6
+    },
+    {
+      "step": 310,
+      "train_loss": 3.2133305072784424,
+      "val_loss": null,
+      "lr": 0.0015578539432295068,
+      "grad_norm": 0.6211322073567719,
+      "tokens_per_s": 46435.3
+    },
+    {
+      "step": 320,
+      "train_loss": 3.128075122833252,
+      "val_loss": null,
+      "lr": 0.0014793421588659178,
+      "grad_norm": 0.6605798580560357,
+      "tokens_per_s": 46277.5
+    },
+    {
+      "step": 330,
+      "train_loss": 3.109581470489502,
+      "val_loss": null,
+      "lr": 0.0014010376261245623,
+      "grad_norm": 0.6674903995636969,
+      "tokens_per_s": 46318.0
+    },
+    {
+      "step": 340,
+      "train_loss": 3.2291035652160645,
+      "val_loss": null,
+      "lr": 0.0013231700256916652,
+      "grad_norm": 0.6628807577788102,
+      "tokens_per_s": 46423.8
+    },
+    {
+      "step": 350,
+      "train_loss": 3.1040992736816406,
+      "val_loss": null,
+      "lr": 0.00124596775665571,
+      "grad_norm": 0.7160982246712281,
+      "tokens_per_s": 46541.9
+    },
+    {
+      "step": 360,
+      "train_loss": 3.29648494720459,
+      "val_loss": null,
+      "lr": 0.001169657266573555,
+      "grad_norm": 0.6844425477195625,
+      "tokens_per_s": 46659.5
+    },
+    {
+      "step": 370,
+      "train_loss": 3.090615749359131,
+      "val_loss": null,
+      "lr": 0.001094462387260738,
+      "grad_norm": 0.6565165125287937,
+      "tokens_per_s": 46673.6
+    },
+    {
+      "step": 380,
+      "train_loss": 3.130319118499756,
+      "val_loss": null,
+      "lr": 0.0010206036782541925,
+      "grad_norm": 0.6836476339517955,
+      "tokens_per_s": 46729.5
+    },
+    {
+      "step": 390,
+      "train_loss": 3.083470344543457,
+      "val_loss": null,
+      "lr": 0.0009482977798731233,
+      "grad_norm": 0.6634322371085616,
+      "tokens_per_s": 46802.8
+    },
+    {
+      "step": 400,
+      "train_loss": 2.9145474433898926,
+      "val_loss": 3.084756374359131,
+      "lr": 0.0008777567777756262,
+      "grad_norm": 0.6579768511425896,
+      "tokens_per_s": 46870.2
+    },
+    {
+      "step": 410,
+      "train_loss": 2.9958906173706055,
+      "val_loss": null,
+      "lr": 0.0008091875808749096,
+      "grad_norm": 0.6637741560346653,
+      "tokens_per_s": 46854.4
+    },
+    {
+      "step": 420,
+      "train_loss": 2.960646152496338,
+      "val_loss": null,
+      "lr": 0.0007427913144398018,
+      "grad_norm": 0.698116374984552,
+      "tokens_per_s": 46922.7
+    },
+    {
+      "step": 430,
+      "train_loss": 3.1663737297058105,
+      "val_loss": null,
+      "lr": 0.0006787627301596835,
+      "grad_norm": 0.7059560463859464,
+      "tokens_per_s": 47003.6
+    },
+    {
+      "step": 440,
+      "train_loss": 3.077363967895508,
+      "val_loss": null,
+      "lr": 0.0006172896349042308,
+      "grad_norm": 0.6885742520115115,
+      "tokens_per_s": 47087.8
+    },
+    {
+      "step": 450,
+      "train_loss": 3.0535507202148438,
+      "val_loss": null,
+      "lr": 0.0005585523398535028,
+      "grad_norm": 0.6983522084221028,
+      "tokens_per_s": 47145.7
+    },
+    {
+      "step": 460,
+      "train_loss": 2.7879700660705566,
+      "val_loss": null,
+      "lr": 0.0005027231316141885,
+      "grad_norm": 0.6616623872879759,
+      "tokens_per_s": 47184.6
+    },
+    {
+      "step": 470,
+      "train_loss": 2.8835220336914062,
+      "val_loss": null,
+      "lr": 0.0004499657668732996,
+      "grad_norm": 0.6835876741300877,
+      "tokens_per_s": 47190.0
+    },
+    {
+      "step": 480,
+      "train_loss": 2.940863609313965,
+      "val_loss": null,
+      "lr": 0.00040043499207159737,
+      "grad_norm": 0.6795766167031935,
+      "tokens_per_s": 47120.6
+    },
+    {
+      "step": 490,
+      "train_loss": 3.055319309234619,
+      "val_loss": null,
+      "lr": 0.00035427608950561597,
+      "grad_norm": 0.6977516889966113,
+      "tokens_per_s": 47089.3
+    },
+    {
+      "step": 500,
+      "train_loss": 2.8819169998168945,
+      "val_loss": 2.9957313537597656,
+      "lr": 0.0003116244511896569,
+      "grad_norm": 0.6868560284739655,
+      "tokens_per_s": 47150.0
+    },
+    {
+      "step": 510,
+      "train_loss": 2.8082926273345947,
+      "val_loss": null,
+      "lr": 0.0002726051817276822,
+      "grad_norm": 0.6842645497092181,
+      "tokens_per_s": 47177.1
+    },
+    {
+      "step": 520,
+      "train_loss": 2.821597099304199,
+      "val_loss": null,
+      "lr": 0.00023733273135995582,
+      "grad_norm": 0.6935090365569919,
+      "tokens_per_s": 47210.1
+    },
+    {
+      "step": 530,
+      "train_loss": 2.752856731414795,
+      "val_loss": null,
+      "lr": 0.00020591056026077068,
+      "grad_norm": 0.6513692372693928,
+      "tokens_per_s": 47077.8
+    },
+    {
+      "step": 540,
+      "train_loss": 2.8307559490203857,
+      "val_loss": null,
+      "lr": 0.0001784308350719301,
+      "grad_norm": 0.6662336309280409,
+      "tokens_per_s": 46798.5
+    },
+    {
+      "step": 550,
+      "train_loss": 2.8519725799560547,
+      "val_loss": null,
+      "lr": 0.0001549741585621078,
+      "grad_norm": 0.7218612550206635,
+      "tokens_per_s": 46651.6
+    },
+    {
+      "step": 560,
+      "train_loss": 2.672794818878174,
+      "val_loss": null,
+      "lr": 0.00013560933320503943,
+      "grad_norm": 0.668255529094536,
+      "tokens_per_s": 45742.6
+    },
+    {
+      "step": 570,
+      "train_loss": 2.943751335144043,
+      "val_loss": null,
+      "lr": 0.00012039315937001363,
+      "grad_norm": 0.685400119783785,
+      "tokens_per_s": 45332.1
+    },
+    {
+      "step": 580,
+      "train_loss": 3.019087314605713,
+      "val_loss": null,
+      "lr": 0.00010937026871660072,
+      "grad_norm": 0.6946778829745524,
+      "tokens_per_s": 45167.9
+    },
+    {
+      "step": 590,
+      "train_loss": 2.690009832382202,
+      "val_loss": null,
+      "lr": 0.00010257299328230666,
+      "grad_norm": 0.6475985062912555,
+      "tokens_per_s": 44938.0
+    },
+    {
+      "step": 600,
+      "train_loss": 2.994931221008301,
+      "val_loss": 2.9787802696228027,
+      "lr": 0.00010002127064713537,
+      "grad_norm": 0.6894244992233881,
+      "tokens_per_s": 44643.5
+    }
+  ],
+  "summary": {
+    "elapsed_s": 14.8075,
+    "train_elapsed_s": 13.7624,
+    "steps_run": 600,
+    "steps_this_run": 600,
+    "tokens_processed": 614400,
+    "tokens_per_s": 44643.5,
+    "initial_train_loss": 7.666342258453369,
+    "initial_train_loss_step": 0,
+    "final_train_loss": 2.994931221008301,
+    "initial_val_loss": 7.645756721496582,
+    "final_val_loss": 2.9787802696228027,
+    "loss_reduction_pct": 60.93,
+    "num_parameters": 1049216,
+    "peak_rss_mib": 386.3,
+    "threads": 2,
+    "timed_out": false
+  },
+  "checkpoints": [
+    {
+      "iteration": 200,
+      "path": "/Users/yunni/Projects/cs336-prep-code/training_lab/checkpoints/checkpoint_000200.pt"
+    },
+    {
+      "iteration": 400,
+      "path": "/Users/yunni/Projects/cs336-prep-code/training_lab/checkpoints/checkpoint_000400.pt"
+    },
+    {
+      "iteration": 600,
+      "path": "/Users/yunni/Projects/cs336-prep-code/training_lab/checkpoints/checkpoint_000600.pt"
+    }
+  ],
+  "resume_check": {
+    "enabled": true,
+    "plan": "A=6 steps; B=3 steps -> save -> fresh model loads -> 3 steps",
+    "steps_total": 6,
+    "steps_before_checkpoint": 3,
+    "loaded_iteration": 3,
+    "max_param_diff": 2.384185791015625e-07,
+    "val_loss_a": 7.517441749572754,
+    "val_loss_b": 7.517441749572754,
+    "val_loss_diff": 0.0,
+    "passed": true,
+    "checkpoint": "/Users/yunni/Projects/cs336-prep-code/training_lab/checkpoints/resume_verify.pt",
+    "elapsed_s": 0.403
+  },
+  "samples": [
+    {
+      "prompt": " other animals who needed the food more.\nThey gave some food to a hungry",
+      "prompt_ids": [
+        582,
+        817,
+        659,
+        1590,
+        263,
+        776,
+        684,
+        46,
+        10,
+        694,
+        729,
+        602,
+        776,
+        266,
+        259,
+        1520
+      ],
+      "output": " other animals who needed the food more.\nThey gave some food to a hungry bottle. They were very happy. They looked very happy and happy.\n\"Spidggy, I dish you?\" Lily asked.\n\"It's okay, I am sorry for help?\" Ben said.\nThey talked",
+      "generated_text": " bottle. They were very happy. They looked very happy and happy.\n\"Spidggy, I dish you?\" Lily asked.\n\"It's okay, I am sorry for help?\" Ben said.\nThey talked",
+      "temperature": 0.8,
+      "top_p": 0.95,
+      "max_new_tokens": 48,
+      "num_generated": 48
+    },
+    {
+      "prompt": " Everywhere she looked there were trees, rocks and colourful flowers. Her",
+      "prompt_ids": [
+        848,
+        1496,
+        377,
+        494,
+        410,
+        408,
+        1181,
+        44,
+        1768,
+        267,
+        1047,
+        778,
+        516,
+        1119,
+        46,
+        878
+      ],
+      "output": " Everywhere she looked there were trees, rocks and colourful flowers. Her mom saw them on the ground and said, \"I am it, Lily. I can play with it?\"\nThe little bird said, \"That's a big, little dog. We can do something more fun. It will show you",
+      "generated_text": " mom saw them on the ground and said, \"I am it, Lily. I can play with it?\"\nThe little bird said, \"That's a big, little dog. We can do something more fun. It will show you",
+      "temperature": 0.8,
+      "top_p": 0.95,
+      "max_new_tokens": 48,
+      "num_generated": 48
+    }
+  ],
+  "data": {
+    "meta_path": "/Users/yunni/Projects/cs336-prep-code/training_lab/data/meta.json",
+    "train_bin": "/Users/yunni/Projects/cs336-prep-code/training_lab/data/train.bin",
+    "val_bin": "/Users/yunni/Projects/cs336-prep-code/training_lab/data/val.bin",
+    "train_tokens": 257477,
+    "val_tokens": 13552,
+    "compression_ratio": 3.6896,
+    "tokenizer_dir": "/Users/yunni/Projects/cs336-prep-code/training_lab/data/tokenizer"
+  },
+  "checks": {
+    "all_losses_finite": true,
+    "loss_drop_applicable": true,
+    "train_loss_dropped_20pct": true,
+    "val_loss_recorded": true,
+    "elapsed_within_120s": true,
+    "two_threads": true,
+    "steps_at_least_one": true,
+    "samples_nonempty": true,
+    "timed_out": false,
+    "resume_check_passed": true,
+    "num_parameters_positive": true
+  },
+  "meta": {
+    "spec": "training_lab/SPEC.md §5.2",
+    "python": "3.14.3",
+    "torch": "2.14.1",
+    "numpy": "2.5.4",
+    "platform": "macOS-27.2-arm64-arm-64bit-Mach-O"
+  }
+}
